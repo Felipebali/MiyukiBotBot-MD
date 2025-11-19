@@ -7,15 +7,15 @@ let handler = async (m, { conn, args }) => {
   const metadata = await conn.groupMetadata(m.chat)
   const participants = metadata.participants
 
-  // 🔹 Normalizar IDs
-  const senderId = m.sender.split(':')[0] + '@s.whatsapp.net'
-  const botId = conn.user.id.split(':')[0] + '@s.whatsapp.net'
-  const owners = ['59896026646@s.whatsapp.net','59898719147@s.whatsapp.net']
+  // 🔹 Normalizar IDs y pasar a minúsculas
+  const senderId = (m.sender.split(':')[0] + '@s.whatsapp.net').toLowerCase()
+  const botId = (conn.user.id.split(':')[0] + '@s.whatsapp.net').toLowerCase()
+  const owners = ['59896026646@s.whatsapp.net','59898719147@s.whatsapp.net'].map(v => v.toLowerCase())
 
   // 🔑 Lista de admins del grupo
   const groupAdmins = participants
     .filter(p => p.admin === 'admin' || p.admin === 'superadmin')
-    .map(p => p.id.split(':')[0] + '@s.whatsapp.net')
+    .map(p => (p.id.split(':')[0] + '@s.whatsapp.net').toLowerCase())
 
   // 🔑 Verificar si el remitente es admin o dueño
   const isAdminReal = groupAdmins.includes(senderId)
@@ -30,6 +30,8 @@ let handler = async (m, { conn, args }) => {
   let user = (m.mentionedJid && m.mentionedJid[0]) || (m.quoted && m.quoted.sender)
   if (!user && args[0]) user = args[0].replace(/[^0-9]/g, '') + '@s.whatsapp.net'
   if (!user) return m.reply('⚠️ Menciona o responde al usuario que deseas promover.')
+
+  user = user.toLowerCase() // normalizamos también el usuario
 
   // 🔹 Protección: no promover al bot ni owners
   if (user === botId || owners.includes(user)) return m.reply('🤨 No puedo promover al bot ni a un owner.')
@@ -49,8 +51,8 @@ let handler = async (m, { conn, args }) => {
       const rango = isOwnerReal ? '👑 DUEÑO' : '🛡️ ADMIN'
       chatData.adminHistory.push({
         fecha: new Date().toLocaleString('es-UY', { timeZone: 'America/Montevideo', hour12: false }),
-        actor: senderId,  // quien ejecuta el comando
-        target: user,     // a quien se promovió
+        actor: senderId,
+        target: user,
         action: 'promovió a admin (por comando)',
         rango
       })
