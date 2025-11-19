@@ -11,10 +11,9 @@ let handler = async (m, { conn, args, command, participants }) => {
   if (!m.isGroup) return m.reply("👥 Este comando solo puede usarse en grupos.")
 
   // 🔑 Verificar si el usuario que ejecuta es admin
-  const groupAdmins = participants
-    .filter(p => p.admin)
-    .map(p => p.id)
-  const isAdmin = groupAdmins.includes(m.sender)
+  const isAdmin = participants.some(
+    p => (p.admin === "admin" || p.admin === "superadmin") && p.id === m.sender
+  )
 
   if (!isAdmin)
     return m.reply("❌ Solo los administradores pueden usar este comando.")
