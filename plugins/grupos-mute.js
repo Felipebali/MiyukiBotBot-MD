@@ -10,15 +10,19 @@ let handler = async (m, { conn, args, command }) => {
   // 🧠 Comprobar si es un grupo
   if (!m.isGroup) return m.reply("👥 Este comando solo puede usarse en grupos.")
 
-  // 🔑 Obtener la metadata del grupo y los admins
+  // 🔑 Obtener metadata del grupo y participantes
   const metadata = await conn.groupMetadata(m.chat)
   const participants = metadata.participants
+
+  // 🔑 Normalizar IDs
+  const senderId = m.sender.split(":")[0] + "@s.whatsapp.net"
   const groupAdmins = participants
     .filter(p => p.admin === "admin" || p.admin === "superadmin")
-    .map(p => p.id)
+    .map(p => p.id.split(":")[0] + "@s.whatsapp.net")
 
-  const isAdmin = groupAdmins.includes(m.sender)
-  if (!isAdmin) return m.reply("❌ Solo los administradores pueden usar este comando.")
+  // 🔑 Verificar si el remitente es admin
+  if (!groupAdmins.includes(senderId)) 
+    return m.reply("❌ Solo los administradores pueden usar este comando.")
 
   // 🎯 Obtener usuario objetivo (mención, número o mensaje citado)
   let who =
