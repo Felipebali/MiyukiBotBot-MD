@@ -277,7 +277,8 @@ global.plugins[filename] = module.default || module
 conn.logger.error(e)
 delete global.plugins[filename]
 }}}
-filesInit().then((_) => Object.keys(global.plugins)).catch(console.error)global.reload = async (_ev, filename) => {
+filesInit().then((_) => Object.keys(global.plugins)).catch(console.error); 
+global.reload = async (_ev, filename) => {
 if (pluginFilter(filename)) {
 const dir = global.__filename(join(pluginFolder, filename), true);
 if (filename in global.plugins) {
