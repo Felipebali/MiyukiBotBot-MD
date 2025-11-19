@@ -78,7 +78,7 @@ const handler = async (m, { conn, text, command }) => {
     }, { quoted: m });
 
     // --- AUDIO ---
-    if (command === 'play' || command === 'playaudio') {
+    if (command === 'yt' || command === 'ytaudio') {
       try {
         const apiUrl = `https://api.vreden.my.id/api/v1/download/youtube/audio?url=${encodeURIComponent(url)}&quality=128`;
         const res = await fetch(apiUrl);
@@ -153,11 +153,13 @@ const handler = async (m, { conn, text, command }) => {
   }
 }
 
-handler.command = ['play', 'playaudio', 'playvideo', 'play2'];
-handler.help = ['play', 'playaudio', 'playvideo', 'play2'];
+// --- COMANDOS ---
+handler.command = ['yt', 'ytaudio', 'playvideo', 'play2'];
+handler.help = ['yt', 'ytaudio', 'playvideo', 'play2'];
 handler.tags = ['descargas'];
 export default handler;
 
+// --- FORMATO DE VISTAS ---
 function formatViews(views) {
   if (views === undefined) return "No disponible";
   if (views >= 1e9) return `${(views / 1e9).toFixed(1)}B (${views.toLocaleString()})`;
