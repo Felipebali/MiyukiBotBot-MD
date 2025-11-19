@@ -2,21 +2,23 @@
 
 let mutedUsers = new Set()
 
-let handler = async (m, { conn, args, command, participants }) => {
+let handler = async (m, { conn, args, command }) => {
   const botNumber = conn.user.id.split(":")[0]
   const botJid = botNumber + "@s.whatsapp.net"
-  const protectedOwners = ["59896026646@s.whatsapp.net", "59898719147@s.whatsapp.net"] // 🔒 Owners protegidos
+  const protectedOwners = ["59896026646@s.whatsapp.net", "59898719147@s.whatsapp.net"]
 
   // 🧠 Comprobar si es un grupo
   if (!m.isGroup) return m.reply("👥 Este comando solo puede usarse en grupos.")
 
-  // 🔑 Verificar si el usuario que ejecuta es admin
-  const isAdmin = participants.some(
-    p => (p.admin === "admin" || p.admin === "superadmin") && p.id === m.sender
-  )
+  // 🔑 Obtener la metadata del grupo y los admins
+  const metadata = await conn.groupMetadata(m.chat)
+  const participants = metadata.participants
+  const groupAdmins = participants
+    .filter(p => p.admin === "admin" || p.admin === "superadmin")
+    .map(p => p.id)
 
-  if (!isAdmin)
-    return m.reply("❌ Solo los administradores pueden usar este comando.")
+  const isAdmin = groupAdmins.includes(m.sender)
+  if (!isAdmin) return m.reply("❌ Solo los administradores pueden usar este comando.")
 
   // 🎯 Obtener usuario objetivo (mención, número o mensaje citado)
   let who =
@@ -38,27 +40,19 @@ let handler = async (m, { conn, args, command, participants }) => {
   // 🔇 Comando mute/silenciar
   if (/^(mute|silenciar)$/i.test(command)) {
     if (mutedUsers.has(who))
-      return m.reply(`⚠️ @${who.split("@")[0]} ya está silenciado.`, null, {
-        mentions: [who],
-      })
+      return m.reply(`⚠️ @${who.split("@")[0]} ya está silenciado.`, null, { mentions: [who] })
 
     mutedUsers.add(who)
-    return m.reply(`🔇 @${who.split("@")[0]} fue silenciado.`, null, {
-      mentions: [who],
-    })
+    return m.reply(`🔇 @${who.split("@")[0]} fue silenciado.`, null, { mentions: [who] })
   }
 
   // 🔈 Comando unmute/desilenciar
   if (/^(unmute|desilenciar)$/i.test(command)) {
     if (!mutedUsers.has(who))
-      return m.reply(`⚠️ @${who.split("@")[0]} no está silenciado.`, null, {
-        mentions: [who],
-      })
+      return m.reply(`⚠️ @${who.split("@")[0]} no está silenciado.`, null, { mentions: [who] })
 
     mutedUsers.delete(who)
-    return m.reply(`🔈 @${who.split("@")[0]} fue desmuteado.`, null, {
-      mentions: [who],
-    })
+    return m.reply(`🔈 @${who.split("@")[0]} fue desmuteado.`, null, { mentions: [who] })
   }
 }
 
@@ -79,6 +73,8 @@ handler.before = async (m, { conn }) => {
           participant: m.sender,
         },
       })
+      // Opcional: mensaje privado al usuario silenciado
+      // await conn.sendMessage(m.sender, { text: "⚠️ Estás silenciado y tu mensaje fue eliminado." })
       return true
     } catch (e) {
       console.error("Error al borrar mensaje:", e)
