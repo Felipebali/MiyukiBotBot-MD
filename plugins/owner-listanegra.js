@@ -1,4 +1,4 @@
-// 📂 plugins/propietario-listanegra.js — FELI 2025 — FIX REAL 🔥
+// 📂 plugins/propietario-listanegra.js — FELI FIX MENCIONES 🔥
 
 import fs from 'fs'
 import path from 'path'
@@ -15,12 +15,9 @@ const sleep = ms => new Promise(r => setTimeout(r, ms))
 
 function normalizeJid(jid = '') {
   if (!jid) return null
-
   jid = jid.toString()
 
-  if (jid.includes('@')) {
-    jid = jid.split('@')[0]
-  }
+  if (jid.includes('@')) jid = jid.split('@')[0]
 
   const digits = jid.replace(/[^0-9]/g, '')
   if (!digits) return null
@@ -28,14 +25,24 @@ function normalizeJid(jid = '') {
   return digits + '@s.whatsapp.net'
 }
 
-function digitsOnly(text = '') {
-  return text.toString().replace(/[^0-9]/g, '')
+function getTarget(m) {
+  return (
+    m.mentionedJid?.[0] ||
+    m.quoted?.sender ||
+    m.quoted?.participant ||
+    m.message?.extendedTextMessage?.contextInfo?.participant ||
+    null
+  )
 }
 
-function findParticipant(metadata, jid) {
+function digitsOnly(text = '') {
+  return text.replace(/[^0-9]/g, '')
+}
+
+function findParticipant(meta, jid) {
   const target = digitsOnly(jid)
 
-  return metadata.participants.find(p => {
+  return meta.participants.find(p => {
     const pd = digitsOnly(p.id)
     return pd === target || pd.endsWith(target)
   })
@@ -62,25 +69,13 @@ function writeDB(data) {
 const handler = async (m, { conn, command, text }) => {
 
   const SEP = '━━━━━━━━━━━━━━━━━━━━'
-  const ICON = { ban: '🚫', ok: '✅', warn: '⚠️' }
-
   const db = readDB()
 
-  // ================= OBTENER USUARIO =================
+  const rawUser = getTarget(m)
+  const userJid = normalizeJid(rawUser)
 
-  let userJid = null
-
-  if (m.quoted) {
-    userJid = normalizeJid(m.quoted.sender || m.quoted.participant)
-  } 
-  else if (m.mentionedJid?.length) {
-    userJid = normalizeJid(m.mentionedJid[0])
-  }
-
-  // ❌ NO PERMITIR NÚMEROS ESCRITOS
-  if (!userJid && ['ln', 'unln'].includes(command)) {
-    return conn.reply(m.chat, '⚠️ Responde o menciona al usuario.', m)
-  }
+  if (!userJid && ['ln', 'unln'].includes(command))
+    return conn.reply(m.chat, '⚠️ Debes mencionar o responder a un usuario.', m)
 
   if (userJid && !db[userJid]) db[userJid] = {}
 
@@ -89,7 +84,7 @@ const handler = async (m, { conn, command, text }) => {
 
   const bannedList = Object.entries(db).filter(([_, d]) => d.banned)
 
-  // ================= AGREGAR =================
+  // ================= ADD =================
 
   if (command === 'ln') {
 
@@ -112,12 +107,12 @@ ${SEP}`,
     })
   }
 
-  // ================= REMOVER =================
+  // ================= REMOVE =================
 
   if (command === 'unln') {
 
     if (!db[userJid]?.banned)
-      return conn.reply(m.chat, '⚠️ No está en la lista.', m)
+      return conn.reply(m.chat, '⚠️ No está en lista.', m)
 
     db[userJid].banned = false
     writeDB(db)
@@ -159,14 +154,12 @@ ${SEP}`,
     for (const jid in db) db[jid].banned = false
     writeDB(db)
 
-    await conn.sendMessage(m.chat, {
-      text: `✅ Lista negra vaciada`
-    })
+    await conn.sendMessage(m.chat, { text: '✅ Lista negra vaciada' })
   }
 }
 
 // =====================================================
-// ================= AUTO KICK SI HABLA =================
+// ================= AUTO KICK =================
 // =====================================================
 
 handler.all = async function (m) {
@@ -191,7 +184,7 @@ handler.all = async function (m) {
 }
 
 // =====================================================
-// ================= AUTO KICK AL ENTRAR =================
+// ================= AUTO JOIN =================
 // =====================================================
 
 handler.before = async function (m) {
