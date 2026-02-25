@@ -3,31 +3,32 @@
 
 let handler = async (m, { conn, args }) => {
   try {
-    // 🔐 Verificación REAL de dueños desde config.js
-    const owners = (global.owner || []).map(v => {
-      if (Array.isArray(v)) v = v[0]
-      if (typeof v !== 'string') return null
-      return v.replace(/[^0-9]/g, '') + '@s.whatsapp.net'
-    }).filter(Boolean)
 
-    const sender = conn.decodeJid ? conn.decodeJid(m.sender) : m.sender
-    if (!owners.includes(sender))
+    // 🔐 Obtener números owner SOLO números
+    const ownerNumbers = (global.owner || []).map(v => {
+      if (Array.isArray(v)) v = v[0]
+      return String(v).replace(/[^0-9]/g, '')
+    })
+
+    // 🔐 Número del sender limpio
+    const senderJid = conn.decodeJid ? conn.decodeJid(m.sender) : m.sender
+    const senderNumber = senderJid.replace(/[^0-9]/g, '')
+
+    if (!ownerNumbers.includes(senderNumber))
       return m.reply('🚫 Solo los dueños del bot pueden usar este comando.')
 
-    // 🧩 Determinar objetivo
+    // =========================
+    // Determinar objetivo
+    // =========================
+
     let target = null
 
-    // 1️⃣ Mención
     if (m.mentionedJid?.length) {
       target = m.mentionedJid[0]
-    }
-
-    // 2️⃣ Mensaje citado
+    } 
     else if (m.quoted?.sender) {
       target = m.quoted.sender
-    }
-
-    // 3️⃣ Número como argumento
+    } 
     else if (args[0]) {
       const num = args[0].replace(/[^0-9]/g, '')
       if (num.length < 8)
@@ -40,7 +41,7 @@ let handler = async (m, { conn, args }) => {
 
     const simple = target.split('@')[0]
 
-    // 🖼️ Obtener foto de perfil
+    // 🖼️ Obtener foto
     let ppUrl
     try {
       ppUrl = await conn.profilePictureUrl(target, 'image')
@@ -68,12 +69,5 @@ let handler = async (m, { conn, args }) => {
 handler.command = ['gpu']
 handler.tags = ['owner', 'tools']
 handler.help = ['gpu @usuario | número | (responder mensaje)']
-
-// 🔓 Desactivar filtros del core
-handler.owner = false
-handler.admin = false
-handler.botAdmin = false
-handler.private = false
-handler.fail = null
 
 export default handler

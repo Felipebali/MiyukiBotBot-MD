@@ -15,6 +15,22 @@ let handler = async (m, { conn }) => {
 ┃ 📆 ${fecha}
 ╰━━━━━━━━━━━━━━━━━━━━━━╯
 
+🖼️ *Multimedia / Perfil*
+• .gpu — Descargar foto de perfil de usuario 🧑🖼️
+• .gpo — Descargar foto del grupo 🏞️
+
+🎖️ *Gestión de Insignias (Solo Owner)*
+• .otorgar @user <insignia> — Otorgar insignia 🏅
+• .quitar @user <insignia> — Quitar insignia ❌
+• .verinsignias @user — Ver insignias 📋
+
+🚫 *Lista Negra*
+• .ln @user — Agregar ⚠️
+• .unln @user — Quitar ✅
+• .vln — Ver lista 📋
+• .clrn — Limpiar lista 🗑️
+• .resetuser @user — Reiniciar datos 🔄
+
 ⚙️ *Gestión del Bot*
 • .restart — Reinicia el bot 🔁
 • .update — Actualiza el bot 🆙
@@ -26,24 +42,6 @@ let handler = async (m, { conn }) => {
 • .resetlink — Resetear link del grupo ♻️
 • .setpp — Cambiar foto del bot 🤖🖼️
 • .setpg — Cambiar foto del grupo 👥🖼️
-
-🖼️ *Multimedia / Perfil*
-• .gpu — Descargar foto de perfil de usuario 🧑🖼️
-• .gpo — Descargar foto del grupo 🏞️
-
-🛡️ *Administradores*
-• .autoadmin — Dar admin al bot 🧩
-• .dar — Dar admin a todos 🫡
-• .quitar — Quitar admin a todos 🧹
-• .chetar — Activar modo Pro ⚙️
-• .deschetar — Desactivar modo Pro 💤
-
-🚫 *Lista Negra*
-• .ln @user — Agregar ⚠️
-• .unln @user — Quitar ✅
-• .vln — Ver lista 📋
-• .clrn — Limpiar lista 🗑️
-• .resetuser @user — Reiniciar datos 🔄
 
 ━━━━━━━━━━━━━━━━━━━
 🐾 *FelixCat – Propietario Supremo*

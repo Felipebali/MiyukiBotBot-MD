@@ -21,61 +21,81 @@ let handler = async (m, { conn }) => {
 ╰━━━━━━━━━━━━━━━━━━━━━━━╯
 
 🌦️ *Consultas rápidas:*
-┃ 🔮 *.horoscopo <signo>* – Tu destino felino del día
-┃ 🚨 *.reportar <motivo>* – Reporta algo indebido
-┃ 🌍 *.clima <ciudad>* – Ver clima actual
-┃ 🕐 *.hora* – Ver hora actual en el mundo
-┃ 🌐 *.traducir <idioma> <texto>* – Traduce textos
-┃ ✉️ *.sug* – Envía una sugerencia (1 cada 24h)
+┃ 🔮 *.horoscopo <signo>*
+┃ 🚨 *.reportar <motivo>*
+┃ 🌍 *.clima <ciudad>*
+┃ 🕐 *.hora*
+┃ 🌐 *.traducir <idioma> <texto>*
+┃ ✉️ *.sug*
+┗━━━━━━━━━━━━━━━━━━━━━┛
+
+┏━━━ 👤 *PERFIL DE USUARIO* ━━━┓
+┃ 🪪 *.perfil* – Ver tu perfil
+┃ 🎂 *.setbr 01/01/2001* – Fecha nacimiento
+┃ 📝 *.bio texto* – Biografía personal
+┃ 🚻 *.genero a elección* – Configurar género
+┗━━━━━━━━━━━━━━━━━━━━━┛
+
+┏━━━ 💕 *RELACIONES* ━━━┓
+┃ 💘 *.pareja citando mensaje* – Proponer relación
+┃ ✅ *.aceptar* – Aceptar propuesta
+┃ ❌ *.rechazar* – Rechazar propuesta
+┃ 💔 *.terminar* – Terminar relación
+┃ 💍 *.casarse* – Casarse (tras 7 días)
+┃ ⚖️ *.divorcio* – Divorciarse
+┃ ❤️ *.relacion* – Ver estado actual
+┃ 💋 *.besar* – Besar a tu pareja
+┃ 🤗 *.abrazar* – Abrazar a tu pareja
+┃ 💖 *.amor* – Aumentar amor
 ┗━━━━━━━━━━━━━━━━━━━━━┛
 
 ┏━━━ 📚 *TIPOS DE MENÚ* ━━━┓
-┃ 🎮 *.menuj* – Juegos y entretenimiento
-┃ 👥 *.menugp* – Herramientas para grupos
-┃ 🔥 *.menuhot* – Humor y +18 😳
-┃ 👑 *.menuowner* – Panel del dueño
+┃ 🎮 *.menuj*
+┃ 👥 *.menugp*
+┃ 🔥 *.menuhot*
+┃ 👑 *.menuowner*
 ┗━━━━━━━━━━━━━━━━━━━━━┛
 
 ┏━━━ 🛡️ *SEGURIDAD DEL GRUPO* ━━━┓
-┃ 🔗 *.antilink* – Bloquea enlaces
-┃ 🧩 *.antilink2* – Modo fuerte
-┃ 🚫 *.antispam* – Evita spam
-┃ 🤖 *.antibot* – Expulsa bots
-┃ ☣️ *.antitoxico* – Frena toxicidad
-┃ 👻 *.antifake* – Bloquea números falsos
+┃ 🔗 *.antilink*
+┃ 🧩 *.antilink2*
+┃ 🚫 *.antispam*
+┃ 🤖 *.antibot*
+┃ ☣️ *.antitoxico*
+┃ 👻 *.antifake*
 ┗━━━━━━━━━━━━━━━━━━━━━┛
 
 ┏━━━ 📥 *DESCARGAS* ━━━┓
-┃ 📲 *.apk* – Descarga apps
-┃ 🎧 *.spotify* – Música Spotify
-┃ 📘 *.fb* – Facebook
-┃ 📸 *.ig* – Instagram
-┃ 📂 *.mediafire* – Archivos
-┃ 🎵 *.tiktok* – TikTok
+┃ 📲 *.apk*
+┃ 🎧 *.spotify*
+┃ 📘 *.fb*
+┃ 📸 *.ig*
+┃ 📂 *.mediafire*
+┃ 🎵 *.tiktok*
 ┗━━━━━━━━━━━━━━━━━━━━━┛
 
 ┏━━━ 🎬 *ENTRETENIMIENTO* ━━━┓
-┃ 🎥 *.quever <género>* – Películas aleatorias por género
-┃ 📺 *.verserie <género>* – Series aleatorias por género
+┃ 🎥 *.quever <género>*
+┃ 📺 *.verserie <género>*
 ┗━━━━━━━━━━━━━━━━━━━━━┛
 
 ┏━━━ 🎶 *MÚSICA / VIDEOS* ━━━┓
-┃ 🎵 *.play* – Música de YouTube
-┃ 🔊 *.mp3* – Convierte a MP3
-┃ 🎬 *.mp2* – Segunda alternativa
-┃ 🎥 *.play2* – Alternativa de audio
-┃ 🎬 *.ytmp4* – enlace del vídeo
+┃ 🎵 *.play*
+┃ 🔊 *.mp3*
+┃ 🎬 *.mp2*
+┃ 🎥 *.play2*
+┃ 🎬 *.ytmp4*
 ┗━━━━━━━━━━━━━━━━━━━━━┛
 
 ┏━━━ 🖼️ *STICKERS & MULTIMEDIA* ━━━┓
-┃ 💬 *.qc <texto>* – Frase a sticker
-┃ ✂️ *.s* – Imagen/video a sticker
-┃ 🖼️ *.imagen* – Buscar imágenes
-┃ 🌐 *.google* – Buscar en Google
+┃ 💬 *.qc <texto>*
+┃ ✂️ *.s*
+┃ 🖼️ *.imagen*
+┃ 🌐 *.google*
 ┗━━━━━━━━━━━━━━━━━━━━━┛
 
 ┏━━━ 🎮 *GAMES FELINOS* ━━━┓
-┃ 🕹️ *.juegos* – Activar juegos
+┃ 🕹️ *.juegos*
 ┃ ❓ *.adivinanza*
 ┃ 🏴 *.bandera*
 ┃ 🏛️ *.capital*
@@ -97,15 +117,15 @@ let handler = async (m, { conn }) => {
 ┗━━━━━━━━━━━━━━━━━━━━━┛
 
 ┏━━━ 🧰 *ADMINS / STAFF* ━━━┓
-┃ 🗑️ *.del* – Borra mensaje citado
-┃ 👢 *.k* – Expulsa usuario
-┃ 🅿️ *.p* – Promueve a admin
-┃ 🅳 *.d* – Quita admin
+┃ 🗑️ *.del*
+┃ 👢 *.k*
+┃ 🅿️ *.p*
+┃ 🅳 *.d*
 ┃ 🔇 *.mute* / *.unmute*
-┃ 🏷️ *.tagall* – Menciona a todos
-┃ 📣 *.tag* – Mencionar uno
-┃ 🧠 *.ht* – Mención oculta
-┃ ⚙️ *.g* – Abrir / cerrar grupo
+┃ 🏷️ *.tagall*
+┃ 📣 *.tag*
+┃ 🧠 *.ht*
+┃ ⚙️ *.g*
 ┗━━━━━━━━━━━━━━━━━━━━━┛
 
 ┏━━━ 👑 *OWNERS* ━━━┓
@@ -121,7 +141,6 @@ let handler = async (m, { conn }) => {
 ┃ 💣 *.wipe*
 ┃ 🪄 *.resetlink*
 ┃ ⚙️ *.update*
-┃ 👑 *.owner*
 ┗━━━━━━━━━━━━━━━━━━━━━┛
 
 🐾 *${botname}* siempre vigilante 😼  
@@ -137,7 +156,7 @@ let handler = async (m, { conn }) => {
   }
 };
 
-handler.help = ['menu', 'menú', 'allmenu'];
+handler.help = ['menu', 'menú', 'help'];
 handler.tags = ['main'];
 handler.command = ['menu', 'menú', 'allmenu'];
 

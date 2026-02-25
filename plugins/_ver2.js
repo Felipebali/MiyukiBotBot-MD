@@ -86,8 +86,8 @@ let handler = async (m, { conn, command, text }) => {
   // =================================================
   // 📤 RE — RECUPERAR POR ID (PRIVADO DEL OWNER)
   // =================================================
-  if (command === 're') {
-    if (!text) return conn.reply(m.chat, '⚠️ Usa: `.re <id>`', m)
+  if (command === 'rec') {
+    if (!text) return conn.reply(m.chat, '⚠️ Usa: `.rec <id>`', m)
 
     const id = parseInt(text)
     if (!id) return conn.reply(m.chat, '⚠️ ID inválido.', m)
@@ -235,6 +235,6 @@ let handler = async (m, { conn, command, text }) => {
 
 handler.help = ['ver', 'r']
 handler.tags = ['tools']
-handler.command = ['ver', 'r', 'rr', 'mlist', 're', 'miclear']
+handler.command = ['ver', 'r', 'rr', 'mlist', 'rec', 'miclear']
 
 export default handler

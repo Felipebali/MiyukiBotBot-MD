@@ -20,7 +20,7 @@ Muestra la lista de multimedia recuperada
 🔹 *.mlist <id>*
 Muestra detalles de un archivo recuperado
 
-🔹 *.re <id>*
+🔹 *.rec <id>*
 Reenvía un archivo por ID  
 📩 *Siempre al privado del owner*
 
