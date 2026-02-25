@@ -1,3 +1,5 @@
+// 📂 plugins/propietario-listanegra.js — FELI 2026 — BLACKLIST JSON 🔥
+
 import fs from 'fs'
 import path from 'path'
 
@@ -178,8 +180,9 @@ const handler = async (m, { conn, command, text }) => {
     const mentions = []
 
     bannedList.forEach(([jid, d], i) => {
-      msg += `*${i + 1}.* 👤 @${jid.split('@')[0]}\n📝 ${d.reason}\n\n`
-      mentions.push(jid.split('@')[0] + '@s.whatsapp.net')
+      const display = jid.split('@')[0] // Mostrar limpio
+      msg += `*${i + 1}.* 👤 @${display}\n📝 ${d.reason}\n\n`
+      mentions.push(jid) // JID completo para mención
     })
 
     msg += SEP
