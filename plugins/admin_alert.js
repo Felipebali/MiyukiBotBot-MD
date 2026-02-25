@@ -1,28 +1,22 @@
 // 📂 plugins/admin-warn.js — FELI 2026 — ADVERTENCIAS PARA ADMINS 🔥
-
 import fs from 'fs'
 import path from 'path'
 
 const DATA_PATH = path.join(process.cwd(), 'data')
-if (!fs.existsSync(DATA_PATH)) fs.mkdirSync(DATA_PATH)
+if (!fs.existsSync(DATA_PATH)) fs.mkdirSync(DATA_PATH, { recursive: true })
 
 const warnsFile = path.join(DATA_PATH, 'admin_warns.json')
+if (!fs.existsSync(warnsFile)) fs.writeFileSync(warnsFile, JSON.stringify({}, null, 2))
 
-function loadWarns() {
-  if (!fs.existsSync(warnsFile)) return {}
-  try { return JSON.parse(fs.readFileSync(warnsFile)) } catch { return {} }
-}
+const loadWarns = () => JSON.parse(fs.readFileSync(warnsFile))
+const saveWarns = (data) => fs.writeFileSync(warnsFile, JSON.stringify(data, null, 2))
 
-function saveWarns(warns) {
-  fs.writeFileSync(warnsFile, JSON.stringify(warns, null, 2))
-}
-
-function normalizeJid(jid) {
+const normalizeJid = (jid) => {
   if (!jid) return null
   return jid.replace(/@c\.us$/, '@s.whatsapp.net').replace(/@s\.whatsapp\.net$/, '@s.whatsapp.net')
 }
 
-const handler = async (m, { conn, text = '', usedPrefix = '.', command, isAdmin = false, isBotAdmin = false }) => {
+let handler = async (m, { conn, text = '', usedPrefix = '.', command, isAdmin = false, isBotAdmin = false }) => {
   if (!m.isGroup) return conn.sendMessage(m.chat, { text: '🚫 Este comando solo se puede usar en grupos.', quoted: m })
 
   const warnsDB = loadWarns()
@@ -46,7 +40,7 @@ const handler = async (m, { conn, text = '', usedPrefix = '.', command, isAdmin 
   // ---------- ⚠️ DAR ADVERTENCIA ----------
   if (['admad','advertenciaadmin','alertadmin'].includes(command)) {
     if (!isAdmin) return conn.sendMessage(m.chat, { text: '❌ Solo los administradores pueden advertir.', quoted: m })
-    if (!isBotAdmin) return conn.sendMessage(m.chat, { text: '🤖 Necesito ser administrador para poder demotar.', quoted: m })
+    if (!isBotAdmin) return conn.sendMessage(m.chat, { text: '🤖 Necesito ser administrador para poder despromover.', quoted: m })
 
     let motivo = text.trim()
       .replace(new RegExp(`^@${target.split('@')[0]}`, 'gi'), '')
@@ -68,14 +62,14 @@ const handler = async (m, { conn, text = '', usedPrefix = '.', command, isAdmin 
         await conn.groupParticipantsUpdate(m.chat, [target], 'demote')
         warns[target] = { count: 0, motivos: [] }
         saveWarns(warnsDB)
-        await conn.sendMessage(m.chat, { text: `🚫 *El administrador @${target.split('@')[0]} ha sido despromovido por acumular 3 advertencias.*\n🧹 Adiós 👋`, mentions: [target], quoted: m })
+        return conn.sendMessage(m.chat, { text: `🚫 *El administrador @${target.split('@')[0]} ha sido despromovido por acumular 3 advertencias.*\n🧹 Adiós 👋`, mentions: [target], quoted: m })
       } catch (e) {
         console.error(e)
         return conn.sendMessage(m.chat, { text: '❌ No se pudo despromover al administrador. Verifica los permisos del bot.', quoted: m })
       }
     } else {
       const restantes = 3 - count
-      await conn.sendMessage(m.chat, { 
+      return conn.sendMessage(m.chat, { 
         text: `⚠️ *Advertencia para admin:* @${target.split('@')[0]}\n📝 Motivo: ${motivo}\n📅 Fecha: ${fecha}\n\n📋 Total: ${count}/3\n🕒 Restan *${restantes}* para ser despromovido.`, 
         mentions: [target],
         quoted: m 
@@ -96,7 +90,7 @@ const handler = async (m, { conn, text = '', usedPrefix = '.', command, isAdmin 
     saveWarns(warnsDB)
 
     await conn.sendMessage(m.chat, { react: { text: '🟢', key: m.key } })
-    await conn.sendMessage(m.chat, { text: `🟢 *Advertencia retirada a admin:* @${target.split('@')[0]}\n📋 Ahora tiene *${userWarn?.count || 0}/3* advertencias.`, mentions: [target], quoted: m })
+    return conn.sendMessage(m.chat, { text: `🟢 *Advertencia retirada a admin:* @${target.split('@')[0]}\n📋 Ahora tiene *${userWarn?.count || 0}/3* advertencias.`, mentions: [target], quoted: m })
   }
 
   // ---------- 📜 LISTA DE ADVERTENCIAS ----------
@@ -114,7 +108,7 @@ const handler = async (m, { conn, text = '', usedPrefix = '.', command, isAdmin 
       mentions.push(jid)
     }
 
-    await conn.sendMessage(m.chat, { text: textList.trim(), mentions, quoted: m })
+    return conn.sendMessage(m.chat, { text: textList.trim(), mentions, quoted: m })
   }
 
   // ---------- 🧹 LIMPIAR TODAS LAS ADVERTENCIAS ----------
@@ -122,7 +116,7 @@ const handler = async (m, { conn, text = '', usedPrefix = '.', command, isAdmin 
     if (!isAdmin) return conn.sendMessage(m.chat, { text: '❌ Solo los administradores pueden limpiar advertencias de admins.', quoted: m })
     Object.keys(warns).forEach(k => delete warns[k])
     saveWarns(warnsDB)
-    await conn.sendMessage(m.chat, { text: '🧹 Todas las advertencias a administradores han sido eliminadas.', quoted: m })
+    return conn.sendMessage(m.chat, { text: '🧹 Todas las advertencias a administradores han sido eliminadas.', quoted: m })
   }
 }
 
@@ -132,9 +126,4 @@ handler.command = [
   'listadmad','listaadmin','warnadmin',
   'clearadmad','limpiaradvertenciasadmin'
 ]
-handler.tags = ['admin']
-handler.group = true
-handler.admin = true
-handler.botAdmin = true
-
 export default handler
