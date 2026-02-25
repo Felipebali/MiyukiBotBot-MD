@@ -1,5 +1,5 @@
-// 🔹 Kick solo mencionando, sin mensaje de aviso
-const handler = async (m, { conn, isAdmin }) => {
+// 🔹 Kick solo mencionando o citando, sin mensaje de aviso
+const handler = async (m, { conn, isAdmin, command }) => {
   const emoji = '🔪';
   const sender = m.sender.replace(/\D/g, '');
 
@@ -10,7 +10,7 @@ const handler = async (m, { conn, isAdmin }) => {
   try {
     groupInfo = await conn.groupMetadata(m.chat);
   } catch {
-    return conn.reply(m.chat, '❌ No se pudo obtener información del grupo.', m);
+    return; // no hacemos nada si falla
   }
 
   const ownerGroup = groupInfo.owner ? groupInfo.owner.replace(/\D/g, '') : null;
@@ -22,10 +22,9 @@ const handler = async (m, { conn, isAdmin }) => {
 
   // ---------- DETECTAR USUARIO ----------
   const user = m.mentionedJid?.[0] || m.quoted?.sender;
-  if (!user) return;
+  if (!user) return; // solo kick si mencionan o citan
 
-  const normalize = jid => String(jid || '').replace(/\D/g, '');
-  const userNorm = normalize(user);
+  const userNorm = String(user).replace(/\D/g, '');
 
   // ---------- PROTEGIDOS ----------
   if (protectedList.includes(userNorm)) return;
