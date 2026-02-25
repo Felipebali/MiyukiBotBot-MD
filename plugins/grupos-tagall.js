@@ -1,5 +1,5 @@
 // 📂 plugins/tagall.js — FelixCat-Bot 🐾
-// TagAll con toggle .antitagall — cooldown individual 12h admins — owners sin cooldown
+// TagAll con toggle .antitagall — sin cooldown
 
 let handler = async function (m, { conn, groupMetadata, args, isAdmin, isOwner, command }) {
 
@@ -11,11 +11,6 @@ let handler = async function (m, { conn, groupMetadata, args, isAdmin, isOwner, 
   // Inicializar datos del chat
   if (!global.db.data.chats[chatId]) global.db.data.chats[chatId] = {}
   const chatData = global.db.data.chats[chatId]
-
-  // Inicializar cooldowns por usuario
-  if (!chatData.tagallCooldowns) chatData.tagallCooldowns = {}
-
-  const COOLDOWN = 12 * 60 * 60 * 1000 // 12 horas
 
   // 🔥 Toggle .antitagall — SOLO ADMIN / OWNER
   if (command === 'antitagall') {
@@ -45,29 +40,6 @@ let handler = async function (m, { conn, groupMetadata, args, isAdmin, isOwner, 
     return conn.sendMessage(chatId, {
       text: '⚠️ El TagAll está desactivado. Usa ".antitagall" para activarlo.'
     })
-  }
-
-  // ⏳ Cooldown SOLO admins (owners no)
-  if (!isOwner) {
-
-    const ahora = Date.now()
-    const ultimoUso = chatData.tagallCooldowns[sender] || 0
-
-    if (ahora - ultimoUso < COOLDOWN) {
-
-      const restante = COOLDOWN - (ahora - ultimoUso)
-
-      const horas = Math.floor(restante / 3600000)
-      const minutos = Math.floor((restante % 3600000) / 60000)
-
-      return conn.sendMessage(chatId, {
-        text: `⏳ Ya usaste TagAll recientemente.\n\n⌚ Podrás usarlo en ${horas}h ${minutos}m.`,
-        mentions: [sender]
-      })
-    }
-
-    // Guardar tiempo individual
-    chatData.tagallCooldowns[sender] = ahora
   }
 
   const participantes = groupMetadata?.participants || []
