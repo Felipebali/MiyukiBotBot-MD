@@ -61,7 +61,6 @@ const handler = async (m, { conn, text = '', usedPrefix = '.', command, isAdmin 
     const count = warns[target].count
     saveWarns(warnsDB)
 
-    // Reacción
     await conn.sendMessage(m.chat, { react: { text: '⚠️', key: m.key } })
 
     if (count >= 3) {
