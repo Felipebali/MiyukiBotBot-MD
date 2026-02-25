@@ -16,7 +16,7 @@ function digitsOnly(text = '') { return text.toString().replace(/[^0-9]/g, '') }
 function normalizeJid(jid = '') { 
   const d = digitsOnly(jid)
   if (!d) return null
-  return d // solo guardamos dígitos
+  return d // solo números como clave
 }
 function extractPhoneNumber(text = '') { const d = digitsOnly(text); if (!d || d.length < 5) return null; return d }
 function findParticipantByDigits(metadata, digits) {
@@ -60,11 +60,11 @@ const handler = async (m, { conn, command, text }) => {
 
   let reason = text?.replace(/@/g,'').replace(/\d{5,}/g,'').trim() || 'No especificado'
   if (!userDigits && !['vln','clrn'].includes(command)) { await m.react('❌'); return conn.reply(m.chat, `${ICON.warn} Debes responder, mencionar o usar índice.`, m) }
-  if (userDigits && !dbUsers[userDigits]) dbUsers[userDigits]={}
+  if (userDigits && !dbUsers[userDigits]) dbUsers[userDigits]={name:userDigits}
 
   // ================= AGREGAR =================
   if (command==='ln') {
-    dbUsers[userDigits] = { banned:true, reason, addedBy:m.sender, name:userDigits }
+    dbUsers[userDigits] = { banned:true, reason, addedBy:m.sender, name:dbUsers[userDigits].name }
     writeBlacklist(dbUsers)
 
     // auto-kick en todos los grupos
@@ -79,7 +79,10 @@ const handler = async (m, { conn, command, text }) => {
 
           await conn.groupParticipantsUpdate(jid, [participant.id], 'remove')
           await sleep(700)
-          await conn.sendMessage(jid,{text:`${ICON.ban} *USUARIO BLOQUEADO — LISTA NEGRA*\n${SEP}\n👤 @${participant.notify || participant.id.split('@')[0]}\n📝 *Motivo:* ${reason}\n🚷 *Expulsión automática*\n${SEP}`, mentions:[participant.id]})
+          await conn.sendMessage(jid,{
+            text:`${ICON.ban} *USUARIO BLOQUEADO — LISTA NEGRA*\n${SEP}\n👤 @${participant.notify || participant.id.split('@')[0]}\n📝 *Motivo:* ${reason}\n🚷 *Expulsión automática*\n${SEP}`,
+            mentions:[participant.id]
+          })
         }catch{}
       }
     }catch{}
@@ -90,7 +93,10 @@ const handler = async (m, { conn, command, text }) => {
     if(!dbUsers[userDigits]?.banned){ await m.react('❌'); return conn.reply(m.chat, `${ICON.ban} No está en la lista negra.`, m) }
     dbUsers[userDigits]={banned:false,name:dbUsers[userDigits].name}
     writeBlacklist(dbUsers)
-    await conn.sendMessage(m.chat,{text:`${ICON.ok} *USUARIO LIBERADO*\n${SEP}\n👤 @${dbUsers[userDigits].name || userDigits}\n${SEP}`})
+    await conn.sendMessage(m.chat,{
+      text:`${ICON.ok} *USUARIO LIBERADO*\n${SEP}\n👤 @${dbUsers[userDigits].name || userDigits}\n${SEP}`,
+      mentions:[userDigits+'@s.whatsapp.net']
+    })
   }
 
   // ================= LISTAR =================
@@ -98,7 +104,10 @@ const handler = async (m, { conn, command, text }) => {
     if(!bannedList.length) return conn.reply(m.chat, `${ICON.ok} Lista negra vacía.`, m)
     let msg = `${ICON.ban} *LISTA NEGRA — ${bannedList.length} USUARIOS*\n${SEP}\n`
     const mentions=[]
-    bannedList.forEach(([d, info], i)=>{ mentions.push(d+'@s.whatsapp.net'); msg+=`*${i+1}.* 👤 @${info.name}\n📝 ${info.reason}\n\n` })
+    bannedList.forEach(([d, info], i)=>{ 
+      msg+=`*${i+1}.* 👤 @${info.name}\n📝 ${info.reason}\n\n` 
+      mentions.push(d+'@s.whatsapp.net')
+    })
     msg+=SEP
     await conn.sendMessage(m.chat,{text:msg.trim(),mentions})
   }
@@ -126,7 +135,10 @@ handler.all=async function(m){
 
     await this.groupParticipantsUpdate(m.chat,[participant.id],'remove')
     await sleep(700)
-    await this.sendMessage(m.chat,{text:`🚫 *USUARIO BLOQUEADO — LISTA NEGRA*\n━━━━━━━━━━━━━━━━━━━━\n👤 @${dbUsers[sender]?.name || participant.notify || participant.id.split('@')[0]}\n🚷 *Expulsión automática*\n━━━━━━━━━━━━━━━━━━━━`, mentions:[participant.id]})
+    await this.sendMessage(m.chat,{
+      text:`🚫 *USUARIO BLOQUEADO — LISTA NEGRA*\n━━━━━━━━━━━━━━━━━━━━\n👤 @${participant.notify || participant.id.split('@')[0]}\n🚷 *Expulsión automática*\n━━━━━━━━━━━━━━━━━━━━`,
+      mentions:[participant.id]
+    })
   }catch{}
 }
 
@@ -142,12 +154,16 @@ handler.before=async function(m){
       const digits=normalizeJid(u)
       const data=dbUsers[digits]
       if(!data?.banned) continue
-
       const participant=findParticipantByDigits(meta,digits)
       if(!participant) continue
+      const reason = data.reason || 'No especificado'
+
       await this.groupParticipantsUpdate(m.chat,[participant.id],'remove')
       await sleep(700)
-      await this.sendMessage(m.chat,{text:`🚨 *USUARIO EN LISTA NEGRA*\n━━━━━━━━━━━━━━━━━━━━\n👤 @${data.name || participant.notify || participant.id.split('@')[0]}\n📝 *Motivo:* ${data.reason}\n🚷 *Expulsión inmediata*\n━━━━━━━━━━━━━━━━━━━━`, mentions:[participant.id]})
+      await this.sendMessage(m.chat,{
+        text:`🚨 *USUARIO EN LISTA NEGRA*\n━━━━━━━━━━━━━━━━━━━━\n👤 @${participant.notify || participant.id.split('@')[0]}\n📝 *Motivo:* ${reason}\n🚷 *Expulsión inmediata*\n━━━━━━━━━━━━━━━━━━━━`,
+        mentions:[participant.id]
+      })
     }
   }catch{}
 }
