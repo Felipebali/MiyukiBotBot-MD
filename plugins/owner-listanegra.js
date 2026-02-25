@@ -182,13 +182,19 @@ const handler = async (m, { conn, command, text }) => {
   else if (command === 'vln') {
     if (!bannedList.length) return conn.reply(m.chat, `${ICON.ok} Lista negra vacía.`, m)
 
-    let msg = `${ICON.ban} *LISTA NEGRA — ${bannedList.length} USUARIOS*\n${SEP}\n`
+    const meta = await conn.groupMetadata(m.chat)
     const mentions = []
+    let msg = `${ICON.ban} *LISTA NEGRA — ${bannedList.length} USUARIOS*\n${SEP}\n`
 
     bannedList.forEach(([jid, d], i) => {
-      const addedBy = d.addedBy ? `@${d.addedBy.split('@')[0]}` : 'Desconocido'
-      msg += `*${i + 1}.* 👤 @${jid.split('@')[0]}\n📝 Razón: ${d.reason}\n👤 Añadido por: ${addedBy}\n\n`
-      mentions.push(jid)
+      const participant = findParticipantByDigits(meta, digitsOnly(jid))
+      const mentionId = participant ? participant.id : jid
+
+      const addedByParticipant = findParticipantByDigits(meta, digitsOnly(d.addedBy))
+      const addedByMention = addedByParticipant ? `@${addedByParticipant.id.split('@')[0]}` : `@${d.addedBy.split('@')[0]}`
+
+      msg += `*${i + 1}.* 👤 @${mentionId.split('@')[0]}\n📝 Razón: ${d.reason}\n👤 Añadido por: ${addedByMention}\n\n`
+      mentions.push(mentionId)
     })
 
     msg += SEP
