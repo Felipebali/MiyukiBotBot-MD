@@ -137,7 +137,7 @@ const handler = async (m, { conn, command, text }) => {
       return conn.reply(m.chat, `${ICON.ban} Usa mencionar o citar, no escribas números.`, m)
     }
 
-    // Guardar nombre del usuario (si está en algún grupo)
+    // Guardar nombre del usuario (si está en algún grupo o contacto)
     let name = userJid.split('@')[0]
     try {
       const groups = Object.keys(await conn.groupFetchAllParticipating())
@@ -187,7 +187,7 @@ const handler = async (m, { conn, command, text }) => {
     writeBlacklist(dbUsers)
 
     await conn.sendMessage(m.chat, {
-      text: `${ICON.ok} *USUARIO LIBERADO*\n${SEP}\n👤 ${dbUsers[userJid].name || userJid.split('@')[0]}\n${SEP}`
+      text: `${ICON.ok} *USUARIO LIBERADO*\n${SEP}\n👤 @${dbUsers[userJid].name || userJid.split('@')[0]}\n${SEP}`
     })
   }
 
@@ -196,14 +196,17 @@ const handler = async (m, { conn, command, text }) => {
     if (!bannedList.length) return conn.reply(m.chat, `${ICON.ok} Lista negra vacía.`, m)
 
     let msg = `${ICON.ban} *LISTA NEGRA — ${bannedList.length} USUARIOS*\n${SEP}\n`
+    const mentions = []
 
     bannedList.forEach(([jid, d], i) => {
       const displayName = d.name || jid.split('@')[0]
-      msg += `*${i + 1}.* 👤 ${displayName}\n📝 ${d.reason}\n\n`
+      mentions.push(jid) // agregar a mentions para que sea un @
+
+      msg += `*${i + 1}.* 👤 @${displayName}\n📝 ${d.reason}\n\n`
     })
 
     msg += SEP
-    await conn.sendMessage(m.chat, { text: msg.trim() })
+    await conn.sendMessage(m.chat, { text: msg.trim(), mentions })
   }
 
   // ================= LIMPIAR =================
@@ -233,7 +236,8 @@ handler.all = async function (m) {
     await sleep(700)
 
     await this.sendMessage(m.chat, {
-      text: `🚫 *USUARIO BLOQUEADO — LISTA NEGRA*\n━━━━━━━━━━━━━━━━━━━━\n👤 ${dbUsers[sender]?.name || participant.notify || participant.id.split('@')[0]}\n🚷 *Expulsión automática*\n━━━━━━━━━━━━━━━━━━━━`
+      text: `🚫 *USUARIO BLOQUEADO — LISTA NEGRA*\n━━━━━━━━━━━━━━━━━━━━\n👤 @${dbUsers[sender]?.name || participant.notify || participant.id.split('@')[0]}\n🚷 *Expulsión automática*\n━━━━━━━━━━━━━━━━━━━━`,
+      mentions: [participant.id]
     })
   } catch {}
 }
@@ -263,7 +267,8 @@ handler.before = async function (m) {
       await sleep(700)
 
       await this.sendMessage(m.chat, {
-        text: `🚨 *USUARIO EN LISTA NEGRA*\n━━━━━━━━━━━━━━━━━━━━\n👤 ${data.name || participant.notify || participant.id.split('@')[0]}\n📝 *Motivo:* ${reason}\n🚷 *Expulsión inmediata*\n━━━━━━━━━━━━━━━━━━━━`
+        text: `🚨 *USUARIO EN LISTA NEGRA*\n━━━━━━━━━━━━━━━━━━━━\n👤 @${data.name || participant.notify || participant.id.split('@')[0]}\n📝 *Motivo:* ${reason}\n🚷 *Expulsión inmediata*\n━━━━━━━━━━━━━━━━━━━━`,
+        mentions: [participant.id]
       })
     }
   } catch {}
