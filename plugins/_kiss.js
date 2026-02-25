@@ -29,7 +29,7 @@ let handler = async (m, { conn }) => {
   await conn.sendMessage(m.chat, { text: textMessage, mentions })
 }
 
-handler.command = ['kiss', 'beso', 'besar']
+handler.command = ['kiss', 'beso']
 handler.help = ['kiss @usuario']
 handler.tags = ['fun', 'nsfw']
 
