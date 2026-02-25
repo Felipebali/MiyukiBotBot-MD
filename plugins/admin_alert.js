@@ -1,132 +1,148 @@
-// 📂 plugins/admin-alert.js — FELI 2026 — ALERTAS PARA ADMINS 🔥
+// 📂 plugins/admin-warn.js — FELI 2026 — ADVERTENCIAS PARA ADMINS 🔥
 
 import fs from 'fs'
 import path from 'path'
 
-const DATABASE_DIR = './database'
-const ALERT_FILE = path.join(DATABASE_DIR, 'admin_alerts.json')
+const DATA_PATH = path.join(process.cwd(), 'data')
+if (!fs.existsSync(DATA_PATH)) fs.mkdirSync(DATA_PATH)
 
-// Crear carpeta y archivo si no existen
-if (!fs.existsSync(DATABASE_DIR)) fs.mkdirSync(DATABASE_DIR, { recursive: true })
-if (!fs.existsSync(ALERT_FILE)) fs.writeFileSync(ALERT_FILE, JSON.stringify({}))
+const warnsFile = path.join(DATA_PATH, 'admin_warns.json')
 
-function sleep(ms) { return new Promise(r => setTimeout(r, ms)) }
+function loadWarns() {
+  if (!fs.existsSync(warnsFile)) return {}
+  try { return JSON.parse(fs.readFileSync(warnsFile)) } catch { return {} }
+}
 
-function normalizeJid(jid = '') {
+function saveWarns(warns) {
+  fs.writeFileSync(warnsFile, JSON.stringify(warns, null, 2))
+}
+
+function normalizeJid(jid) {
   if (!jid) return null
-  jid = jid.toString().trim().replace(/^\+/, '')
-  if (jid.endsWith('@c.us')) return jid.replace('@c.us', '@s.whatsapp.net')
-  if (jid.endsWith('@s.whatsapp.net')) return jid
-  if (jid.includes('@')) return jid
-  const cleaned = jid.replace(/[^0-9]/g, '')
-  if (!cleaned) return null
-  return cleaned + '@s.whatsapp.net'
+  return jid.replace(/@c\.us$/, '@s.whatsapp.net').replace(/@s\.whatsapp\.net$/, '@s.whatsapp.net')
 }
 
-function readAlerts() {
-  try { return JSON.parse(fs.readFileSync(ALERT_FILE)) } 
-  catch { return {} }
-}
+const handler = async (m, { conn, text, usedPrefix, command, isAdmin, isBotAdmin }) => {
+  if (!m.isGroup) return m.reply('🚫 Este comando solo se puede usar en grupos.')
 
-function writeAlerts(data) { fs.writeFileSync(ALERT_FILE, JSON.stringify(data, null, 2)) }
-
-// ================= HANDLER =================
-const handler = async (m, { conn, command, text }) => {
-  if (!m.isGroup) return
-  const meta = await conn.groupMetadata(m.chat)
-  const participants = meta.participants
-
-  // Solo admins pueden usar
-  const isAdmin = participants.some(p => p.id === m.sender && p.admin)
-  if (!isAdmin) return conn.reply(m.chat, '⚠️ Solo administradores pueden usar este comando.', m)
-
-  const ICON = { alert: '⚠️', ok: '✅' }
-  const SEP = '━━━━━━━━━━━━━━━━━━━━'
-  const dbAlerts = readAlerts()
+  const warnsDB = loadWarns()
+  if (!warnsDB[m.chat]) warnsDB[m.chat] = {}
+  const warns = warnsDB[m.chat]
 
   // Determinar admin objetivo
-  let targetJid = null
-  if (m.mentionedJid?.length) targetJid = normalizeJid(m.mentionedJid[0])
-  else if (m.quoted) targetJid = normalizeJid(m.quoted.sender || m.quoted.participant)
-  if (!targetJid) return conn.reply(m.chat, `${ICON.alert} Debes mencionar o responder a un administrador.`, m)
+  const targetRaw = m.mentionedJid?.[0] || m.quoted?.sender
+  const target = normalizeJid(targetRaw)
+  if (!target) return m.reply(`⚠️ Debes mencionar o responder a un administrador.\nEj: ${usedPrefix}${command} @admin [motivo]`)
 
-  // Verificar que el usuario sea admin
-  const targetAdmin = participants.find(p => p.id === targetJid)
-  if (!targetAdmin?.admin) return conn.reply(m.chat, '⚠️ Solo puedes alertar a administradores.', m)
+  const meta = await conn.groupMetadata(m.chat)
+  const participants = meta.participants
+  const targetAdmin = participants.find(p => p.id === target)
+  if (!targetAdmin?.admin) return m.reply('⚠️ Solo puedes advertir a administradores.')
 
-  if (!dbAlerts[m.chat]) dbAlerts[m.chat] = {}
-  if (!dbAlerts[m.chat][targetJid]) dbAlerts[m.chat][targetJid] = { count: 0, reasons: [] }
+  if (!warns[target]) warns[target] = { count: 0, motivos: [] }
+  if (!Array.isArray(warns[target].motivos)) warns[target].motivos = []
 
-  const reason = text?.trim() || 'No especificado'
+  // ---------- ⚠️ DAR ADVERTENCIA ----------
+  if (['admad','advertenciaadmin','alertadmin'].includes(command)) {
+    if (!isAdmin) return m.reply('❌ Solo los administradores pueden advertir.')
+    if (!isBotAdmin) return m.reply('🤖 Necesito ser administrador para poder demotar.')
 
-  // ================= DAR ALERTA =================
-  if (command === 'alerta') {
-    dbAlerts[m.chat][targetJid].count += 1
-    dbAlerts[m.chat][targetJid].reasons.push({ reason, by: m.sender, date: new Date().toISOString() })
-    writeAlerts(dbAlerts)
+    let motivo = text?.trim()
+      .replace(new RegExp(`^@${target.split('@')[0]}`, 'gi'), '')
+      .replace(new RegExp(`^${usedPrefix}${command}`, 'gi'), '')
+      .trim()
+    if (!motivo) motivo = 'Sin especificar 💤'
 
-    let msg = `${ICON.alert} *ALERTA A ADMIN*\n${SEP}\n👤 @${targetJid.split('@')[0]}\n📝 Motivo: ${reason}\n⚠️ Total: ${dbAlerts[m.chat][targetJid].count}`
+    const fecha = new Date().toLocaleString('es-UY', { timeZone: 'America/Montevideo' })
 
-    // ================= QUITAR ADMIN A LA 3ª ALERTA =================
-    if (dbAlerts[m.chat][targetJid].count >= 3) {
-      await conn.groupParticipantsUpdate(m.chat, [targetJid], 'demote')
-      msg += `\n❌ *Alcanzó 3 alertas — Rol de admin removido*`
-      dbAlerts[m.chat][targetJid].count = 0
-      dbAlerts[m.chat][targetJid].reasons = []
-      writeAlerts(dbAlerts)
+    warns[target].count += 1
+    warns[target].motivos.push({ motivo, fecha })
+    const count = warns[target].count
+    saveWarns(warnsDB)
+
+    await conn.sendMessage(m.chat, { react: { text: '⚠️', key: m.key } })
+
+    if (count >= 3) {
+      const msg = `🚫 *El administrador @${target.split('@')[0]} ha sido despromovido por acumular 3 advertencias.*\n🧹 Adiós 👋`
+      try {
+        await conn.sendMessage(m.chat, { text: msg, mentions: [target], quoted: m })
+        await conn.groupParticipantsUpdate(m.chat, [target], 'demote')
+        warns[target] = { count: 0, motivos: [] }
+        saveWarns(warnsDB)
+      } catch (e) {
+        console.error(e)
+        return m.reply('❌ No se pudo despromover al administrador. Verifica los permisos del bot.')
+      }
+    } else {
+      const restantes = 3 - count
+      await conn.sendMessage(m.chat, {
+        text: `⚠️ *Advertencia para admin:* @${target.split('@')[0]}\n📝 Motivo: ${motivo}\n📅 Fecha: ${fecha}\n\n📋 Total: ${count}/3\n🕒 Restan *${restantes}* para ser despromovido.`,
+        mentions: [target],
+        quoted: m
+      })
     }
-
-    await conn.sendMessage(m.chat, { text: msg, mentions: [targetJid] })
   }
 
-  // ================= QUITAR ALERTA =================
-  else if (command === 'quitaralerta') {
-    if (dbAlerts[m.chat][targetJid].count <= 0) return conn.reply(m.chat, `${ICON.alert} Este admin no tiene alertas.`, m)
-    dbAlerts[m.chat][targetJid].count -= 1
-    dbAlerts[m.chat][targetJid].reasons.pop()
-    writeAlerts(dbAlerts)
+  // ---------- 🟢 QUITAR ADVERTENCIA ----------
+  else if (['unadmad','quitaradvertenciaadmin'].includes(command)) {
+    if (!isAdmin) return m.reply('❌ Solo los administradores pueden quitar advertencias.')
 
+    const userWarn = warns[target]
+    if (!userWarn || !userWarn.count)
+      return conn.sendMessage(m.chat, { text: `✅ @${target.split('@')[0]} no tiene advertencias.`, mentions: [target], quoted: m })
+
+    userWarn.count = Math.max(0, userWarn.count - 1)
+    userWarn.motivos?.pop()
+    if (userWarn.count === 0 && (!userWarn.motivos || userWarn.motivos.length === 0)) delete warns[target]
+    saveWarns(warnsDB)
+
+    await conn.sendMessage(m.chat, { react: { text: '🟢', key: m.key } })
     await conn.sendMessage(m.chat, {
-      text: `${ICON.ok} *ALERTA ELIMINADA*\n${SEP}\n👤 @${targetJid.split('@')[0]}\n⚠️ Total: ${dbAlerts[m.chat][targetJid].count}`,
-      mentions: [targetJid]
+      text: `🟢 *Advertencia retirada a admin:* @${target.split('@')[0]}\n📋 Ahora tiene *${userWarn?.count || 0}/3* advertencias.`,
+      mentions: [target],
+      quoted: m
     })
   }
 
-  // ================= VER ALERTAS =================
-  else if (command === 'veralertas') {
-    const alerts = dbAlerts[m.chat] || {}
-    const entries = Object.entries(alerts)
-    if (!entries.length) return conn.reply(m.chat, `${ICON.ok} No hay alertas en este grupo.`, m)
+  // ---------- 📜 LISTA DE ADVERTENCIAS ----------
+  else if (['listadmad','listaadmin','warnadmin'].includes(command)) {
+    const entries = Object.entries(warns)
+      .filter(([jid, w]) => w.count && w.count > 0)
 
-    let msg = `${ICON.alert} *ALERTAS DE ADMINS — ${entries.length}*\n${SEP}\n`
+    if (entries.length === 0) return m.reply('✅ No hay administradores con advertencias.')
+
+    let textList = '⚠️ *Advertencias activas a administradores:*\n\n'
     const mentions = []
 
-    entries.forEach(([jid, data], i) => {
-      const adminCheck = participants.some(p => p.id === jid && p.admin)
-      if (!adminCheck) return
-      msg += `*${i + 1}.* 👤 @${jid.split('@')[0]}\n⚠️ Total: ${data.count}\n`
+    for (const [jid, w] of entries) {
+      const ultimo = w.motivos?.length ? w.motivos[w.motivos.length - 1] : null
+      const motivo = ultimo ? ultimo.motivo : 'Sin motivo'
+      textList += `• @${jid.split('@')[0]} → ${w.count}/3 — 📝 ${motivo}\n`
       mentions.push(jid)
-    })
+    }
 
-    msg += SEP
-    await conn.sendMessage(m.chat, { text: msg.trim(), mentions })
+    await conn.sendMessage(m.chat, { text: textList.trim(), mentions, quoted: m })
   }
 
-  // ================= LIMPIAR ALERTAS =================
-  else if (command === 'limpiaralertas') {
-    for (const jid in dbAlerts[m.chat]) dbAlerts[m.chat][jid] = { count: 0, reasons: [] }
-    writeAlerts(dbAlerts)
-    await conn.sendMessage(m.chat, { text: `${ICON.ok} *Todas las alertas de administradores han sido limpiadas*\n${SEP}` })
+  // ---------- 🧹 LIMPIAR TODAS LAS ADVERTENCIAS ----------
+  else if (['clearadmad','limpiaradvertenciasadmin'].includes(command)) {
+    if (!isAdmin) return m.reply('❌ Solo los administradores pueden limpiar advertencias de admins.')
+
+    Object.keys(warns).forEach(k => delete warns[k])
+    saveWarns(warnsDB)
+    await conn.sendMessage(m.chat, { text: '🧹 Todas las advertencias a administradores han sido eliminadas.' })
   }
 }
 
-// ================= CONFIG =================
-handler.help = ['alerta','quitaralerta','veralertas','limpiaralertas']
+handler.command = [
+  'admad','advertenciaadmin','alertadmin',
+  'unadmad','quitaradvertenciaadmin',
+  'listadmad','listaadmin','warnadmin',
+  'clearadmad','limpiaradvertenciasadmin'
+]
 handler.tags = ['admin']
-handler.command = ['alerta','quitaralerta','veralertas','limpiaralertas']
 handler.group = true
-handler.rowner = false
-
-console.log('✅ Plugin admin-alert cargado')
+handler.admin = true
+handler.botAdmin = true
 
 export default handler
