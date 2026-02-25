@@ -1,4 +1,4 @@
-// 📂 plugins/propietario-listanegra.js — FELI 2025 — BLACKLIST JSON 🔥
+// 📂 plugins/propietario-listanegra.js — FELI 2026 — BLACKLIST JSON 🔥
 
 import fs from 'fs'
 import path from 'path'
@@ -189,14 +189,15 @@ const handler = async (m, { conn, command, text }) => {
 
     let msg = ''
 
-    bannedList.forEach(([jid, d]) => {
+    bannedList.forEach(([jid, d], index) => {
       let display = jid.split('@')[0]
       if (meta) {
         const participant = meta.participants.find(p => p.id === jid)
         if (participant?.notify) display = participant.notify
       }
 
-      msg += `${ICON.ban} *USUARIO BLOQUEADO — LISTA NEGRA*\n${SEP}\n👤 @${display}\n📝 *Motivo:* ${d.reason || 'No especificado'}\n🚷 *Expulsión automática*\n${SEP}\n`
+      // Solo usuario y motivo, con mención
+      msg += `${index + 1}. ${ICON.ban} 👤 @${display}\n📝 Motivo: ${d.reason || 'No especificado'}\n${SEP}\n`
       mentions.push(jid)
     })
 
