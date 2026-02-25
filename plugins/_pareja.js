@@ -1,3 +1,4 @@
+// 🔹 handler amoroso con protección de parejas y control de owners
 import fs from 'fs'
 import path from 'path'
 
@@ -10,13 +11,24 @@ if (!fs.existsSync(file)) fs.writeFileSync(file, JSON.stringify({}, null, 2))
 const loadDB = () => JSON.parse(fs.readFileSync(file))
 const saveDB = (data) => fs.writeFileSync(file, JSON.stringify(data, null, 2))
 
-const TIEMPO_PROPUESTA = 24 * 60 * 60 * 1000 // 24 horas
+// 🧠 Sistema universal de owners (anti v.replace error)
+function getOwnersJid() {
+  return (global.owner || [])
+    .map(v => {
+      if (Array.isArray(v)) v = v[0]
+      if (typeof v !== 'string') return null
+      return v.replace(/[^0-9]/g, '') + '@s.whatsapp.net'
+    })
+    .filter(Boolean)
+}
 
-let handler = async (m, { conn, command }) => {
+let handler = async (m, { conn }) => {
 
   let db = loadDB()
-  const sender = m.sender
+  const sender = conn.decodeJid(m.sender)
   const ahora = Date.now()
+
+  const ownersJid = getOwnersJid()
 
   const getUser = (id) => {
     if (!db[id]) {
@@ -47,7 +59,7 @@ let handler = async (m, { conn, command }) => {
   }
 
   // ======================
-  // 🔒 Validación de parejas
+  // Protección de pareja
   // ======================
   const validarInteraccion = (target) => {
     if (!target) return null
@@ -65,47 +77,38 @@ let handler = async (m, { conn, command }) => {
   }
 
   // ======================
-  // ⏰ Limpiar propuestas vencidas
-  // ======================
-  Object.keys(db).forEach(id => {
-    const u = db[id]
-    if (u.propuesta && u.propuestaFecha && (ahora - u.propuestaFecha > TIEMPO_PROPUESTA)) {
-      const proposer = u.propuesta
-      u.propuesta = null
-      u.propuestaFecha = null
-      conn.sendMessage(
-        m.chat,
-        { text: `💔 La propuesta de ${tag(proposer)} a ${tag(id)} ha expirado.` }
-      )
-    }
-  })
-  saveDB(db)
-
-  // ======================
   // 💌 PROPUESTA
   // ======================
   if (command === 'pareja') {
+
     const target = getTarget()
     if (!target) return m.reply('💌 Menciona o responde al mensaje de la persona.')
+
     if (target === sender) return m.reply('😹 No puedes ser pareja contigo mismo.')
 
     const user = getUser(sender)
     const tu = getUser(target)
 
-    const protegido = validarInteraccion(target)
-    if (protegido) return m.reply(protegido)
-
+    // Validar si ya tienen pareja
     if (user.estado !== 'soltero')
       return m.reply(`😡 Ya tienes pareja con ${tag(user.pareja)}`)
+
     if (tu.estado !== 'soltero')
       return m.reply(`😳 ${tag(target)} ya tiene pareja con ${tag(tu.pareja)}`)
 
     tu.propuesta = sender
     tu.propuestaFecha = ahora
+
     saveDB(db)
 
     return conn.reply(m.chat,
-      `💖 *Propuesta de Amor*\n\n${tag(sender)} quiere estar con ${tag(target)} ❤️\n\nResponde:\n👉 *.aceptar*\n👉 *.rechazar*\n⏱ Tienes 24 horas para aceptar.`,
+      `💖 *Propuesta de Amor*
+
+${tag(sender)} quiere estar con ${tag(target)} ❤️
+
+Responde:
+👉 *.aceptar*
+👉 *.rechazar*`,
       m, { mentions: [sender, target] })
   }
 
@@ -113,14 +116,21 @@ let handler = async (m, { conn, command }) => {
   // ✅ ACEPTAR
   // ======================
   if (command === 'aceptar') {
+
     const user = getUser(sender)
-    if (!user.propuesta) return m.reply('💭 No tienes propuestas.')
+
+    if (!user.propuesta)
+      return m.reply('💭 No tienes propuestas.')
 
     const proposer = user.propuesta
-    const protegido = validarInteraccion(proposer)
-    if (protegido) return m.reply(protegido)
-
     const proposerUser = getUser(proposer)
+
+    // Validar tiempo de propuesta (24h = 86400000ms)
+    if (user.propuestaFecha && ahora - user.propuestaFecha > 86400000) {
+      user.propuesta = null
+      saveDB(db)
+      return m.reply('⏳ La propuesta ha expirado.')
+    }
 
     user.estado = 'novios'
     proposerUser.estado = 'novios'
@@ -133,7 +143,9 @@ let handler = async (m, { conn, command }) => {
     saveDB(db)
 
     return conn.reply(m.chat,
-      `💞 *¡Ahora son pareja!*\n\n${tag(sender)} ❤️ ${tag(proposer)}`,
+      `💞 *¡Ahora son pareja!*
+
+${tag(sender)} ❤️ ${tag(proposer)}`,
       m, { mentions: [sender, proposer] })
   }
 
@@ -141,8 +153,11 @@ let handler = async (m, { conn, command }) => {
   // ❌ RECHAZAR
   // ======================
   if (command === 'rechazar') {
+
     const user = getUser(sender)
-    if (!user.propuesta) return m.reply('💭 No tienes propuestas.')
+
+    if (!user.propuesta)
+      return m.reply('💭 No tienes propuestas.')
 
     const proposer = user.propuesta
     user.propuesta = null
@@ -154,116 +169,49 @@ let handler = async (m, { conn, command }) => {
   }
 
   // ======================
-  // 💍 CASARSE
+  // 💋 / 🤗 / ❤️ / 📊
   // ======================
-  if (command === 'casarse') {
+  if (['besar','abrazar','amor','relacion'].includes(command)) {
+
     const user = getUser(sender)
-    if (!user.pareja) return m.reply('💔 No tienes pareja.')
-    if (user.estado === 'casados') return m.reply('💍 Ya están casados.')
+    if (!user.pareja) return m.reply('💔 No tienes pareja 😢')
 
-    const dias = ahora - user.relacionFecha
-    if (dias < 7 * 86400000) return m.reply('⏳ Deben estar 7 días de novios para casarse.')
-
-    const pareja = getUser(user.pareja)
-    user.estado = 'casados'
-    pareja.estado = 'casados'
-    user.matrimonioFecha = ahora
-    pareja.matrimonioFecha = ahora
-
-    saveDB(db)
-
-    return conn.reply(m.chat,
-      `💍 *¡Boda realizada!*\n\n${tag(sender)} 💖 ${tag(user.pareja)}\nAhora están casados 🥂`,
-      m, { mentions: [sender, user.pareja] })
-  }
-
-  // ======================
-  // 💔 TERMINAR NOVIAZGO
-  // ======================
-  if (command === 'terminar') {
-    const user = getUser(sender)
-    if (!user.pareja) return m.reply('💔 No tienes pareja.')
-    if (user.estado === 'casados') return m.reply('⚠️ Están casados, usa *.divorciar*')
-
-    const parejaID = user.pareja
-    const pareja = getUser(parejaID)
-    user.estado = 'soltero'
-    pareja.estado = 'soltero'
-    user.pareja = null
-    pareja.pareja = null
-
-    saveDB(db)
-
-    return conn.reply(m.chat,
-      `💔 *Ruptura*\n\n${tag(sender)} terminó con ${tag(parejaID)}`,
-      m, { mentions: [sender, parejaID] })
-  }
-
-  // ======================
-  // ⚖️ DIVORCIO
-  // ======================
-  if (command === 'divorciar') {
-    const user = getUser(sender)
-    if (!user.pareja) return m.reply('💔 No tienes pareja.')
-    if (user.estado !== 'casados') return m.reply('⚠️ No están casados.')
-
-    const parejaID = user.pareja
-    const pareja = getUser(parejaID)
-    user.estado = 'soltero'
-    pareja.estado = 'soltero'
-    user.pareja = null
-    pareja.pareja = null
-
-    saveDB(db)
-
-    return conn.reply(m.chat,
-      `⚖️ *Divorcio realizado*\n\n${tag(sender)} 💔 ${tag(parejaID)}`,
-      m, { mentions: [sender, parejaID] })
-  }
-
-  // ======================
-  // 💋 BESAR / 🤗 ABRAZAR / ❤️ AMOR / 📊 RELACION
-  // ======================
-  const acciones = { 'besar': 5, 'abrazar': 3, 'amor': 10 }
-  if (Object.keys(acciones).includes(command)) {
     const target = getTarget()
-    const user = getUser(sender)
-    if (!user.pareja) return m.reply('💔 No tienes pareja.')
-
     const mensajeProtegido = validarInteraccion(target)
     if (mensajeProtegido) return m.reply(mensajeProtegido)
-    if (target && target !== user.pareja) return m.reply(`😡 Tu pareja es ${tag(user.pareja)} no ${tag(target)}`)
 
     const pareja = getUser(user.pareja)
-    user.amor += acciones[command]
-    pareja.amor = user.amor
-    saveDB(db)
 
-    const mensajes = {
-      'besar': `💋 ${tag(sender)} besó a ${tag(user.pareja)}\n\n❤️ Amor: ${user.amor}`,
-      'abrazar': `🤗 ${tag(sender)} abrazó a ${tag(user.pareja)}\n\n❤️ Amor: ${user.amor}`,
-      'amor': `❤️ Amor aumentado\n\n${tag(sender)} 💕 ${tag(user.pareja)}\n\nNivel: ${user.amor}`
+    if (command === 'besar') {
+      user.amor += 5
+      pareja.amor = user.amor
+      saveDB(db)
+      return conn.reply(m.chat, `💋 ${tag(sender)} besó a ${tag(user.pareja)}\n❤️ Amor: ${user.amor}`, m, { mentions: [sender, user.pareja] })
     }
-
-    return m.reply(mensajes[command])
-  }
-
-  if (command === 'relacion') {
-    const user = getUser(sender)
-    if (!user.pareja) return m.reply('💔 Estás soltero.')
-
-    const parejaID = user.pareja
-    const tiempoJuntos = tiempo(ahora - user.relacionFecha)
-
-    return conn.reply(m.chat,
-      `💑 *Relación*\n\n${tag(sender)} ❤️ ${tag(parejaID)}\n\nEstado: ${user.estado}\nTiempo: ${tiempoJuntos}\nAmor: ${user.amor}`,
-      m, { mentions: [sender, parejaID] })
+    if (command === 'abrazar') {
+      user.amor += 3
+      pareja.amor = user.amor
+      saveDB(db)
+      return conn.reply(m.chat, `🤗 ${tag(sender)} abrazó a ${tag(user.pareja)}\n❤️ Amor: ${user.amor}`, m, { mentions: [sender, user.pareja] })
+    }
+    if (command === 'amor') {
+      user.amor += 10
+      pareja.amor = user.amor
+      saveDB(db)
+      return conn.reply(m.chat, `❤️ Amor aumentado\n${tag(sender)} 💕 ${tag(user.pareja)}\nNivel: ${user.amor}`, m, { mentions: [sender, user.pareja] })
+    }
+    if (command === 'relacion') {
+      const tiempoJuntos = tiempo(ahora - user.relacionFecha)
+      return conn.reply(m.chat, `💑 *Relación*\n${tag(sender)} ❤️ ${tag(user.pareja)}\nEstado: ${user.estado}\nTiempo: ${tiempoJuntos}\nAmor: ${user.amor}`, m, { mentions: [sender, user.pareja] })
+    }
   }
 
   // ======================
-  // 📜 LISTA DE PAREJAS
+  // 📜 LISTA DE PAREJAS (solo owner)
   // ======================
   if (command === 'listapareja') {
+    if (!ownersJid.includes(sender)) return m.reply('❌ Solo el dueño puede usar este comando.')
+
     let texto = '💞 *Parejas activas*\n\n'
     let mentions = []
     for (let id in db) {
@@ -273,15 +221,17 @@ let handler = async (m, { conn, command }) => {
         mentions.push(id, user.pareja)
       }
     }
-    if (mentions.length === 0) texto += '😿 No hay parejas.'
+    if (!mentions.length) texto += '😿 No hay parejas.'
     return conn.reply(m.chat, texto, m, { mentions })
   }
 
   // ======================
-  // 🧹 CLEARCHIP: BORRAR TODO
+  // 🧹 CLEARSHIP (borrar todo) — solo owner
   // ======================
   if (command === 'clearship') {
-    Object.keys(db).forEach(id => {
+    if (!ownersJid.includes(sender)) return m.reply('❌ Solo el dueño puede usar este comando.')
+
+    for (let id in db) {
       db[id].pareja = null
       db[id].estado = 'soltero'
       db[id].propuesta = null
@@ -289,17 +239,15 @@ let handler = async (m, { conn, command }) => {
       db[id].relacionFecha = null
       db[id].matrimonioFecha = null
       db[id].amor = 0
-    })
+    }
     saveDB(db)
-    return m.reply('🧹 Se han borrado todas las parejas y propuestas 💔')
+    return m.reply('🧹 Todas las parejas y propuestas fueron eliminadas.')
   }
-
 }
 
 handler.command = [
-  'pareja', 'aceptar', 'rechazar',
-  'terminar', 'casarse', 'divorciar',
-  'relacion', 'amor', 'besar', 'abrazar', 'listapareja', 'clearship'
+  'pareja','aceptar','rechazar','terminar','casarse','divorciar',
+  'relacion','amor','besar','abrazar','listapareja','clearship'
 ]
 
 export default handler
