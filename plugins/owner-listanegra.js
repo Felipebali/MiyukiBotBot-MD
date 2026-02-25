@@ -87,8 +87,9 @@ const handler = async (m, { conn, command, text }) => {
         if (participant) {
           await conn.groupParticipantsUpdate(m.chat, [participant.id], 'remove')
           await sleep(700)
+          const display = participant.notify || participant.name || participant.id.split('@')[0]
           await conn.sendMessage(m.chat, {
-            text: `${ICON.ban} *ELIMINACIÓN INMEDIATA — LISTA NEGRA*\n${SEP}\n👤 @${participant.id.split('@')[0]}\n📝 *Motivo:* ${reason}\n🚷 *Expulsión automática*\n${SEP}`,
+            text: `${ICON.ban} *ELIMINACIÓN INMEDIATA — LISTA NEGRA*\n${SEP}\n👤 @${display}\n📝 *Motivo:* ${reason}\n🚷 *Expulsión automática*\n${SEP}`,
             mentions: [participant.id]
           })
         }
@@ -151,8 +152,9 @@ const handler = async (m, { conn, command, text }) => {
           await conn.groupParticipantsUpdate(jid, [participant.id], 'remove')
           await sleep(700)
 
+          const display = participant.notify || participant.name || participant.id.split('@')[0]
           await conn.sendMessage(jid, {
-            text: `${ICON.ban} *USUARIO BLOQUEADO — LISTA NEGRA*\n${SEP}\n👤 @${participant.id.split('@')[0]}\n📝 *Motivo:* ${reason}\n🚷 *Expulsión automática*\n${SEP}`,
+            text: `${ICON.ban} *USUARIO BLOQUEADO — LISTA NEGRA*\n${SEP}\n👤 @${display}\n📝 *Motivo:* ${reason}\n🚷 *Expulsión automática*\n${SEP}`,
             mentions: [participant.id]
           })
         } catch {}
@@ -191,12 +193,17 @@ const handler = async (m, { conn, command, text }) => {
 
     bannedList.forEach(([jid, d], index) => {
       let participantId = jid
+      let display = jid.split('@')[0]
+
       if (meta) {
         const participant = meta.participants.find(p => p.id === jid)
-        if (participant) participantId = participant.id
+        if (participant) {
+          participantId = participant.id
+          display = participant.notify || participant.name || display
+        }
       }
 
-      msg += `${index + 1}. ${ICON.ban} 👤 @${participantId.split('@')[0]}\n📝 Motivo: ${d.reason || 'No especificado'}\n${SEP}\n`
+      msg += `${index + 1}. ${ICON.ban} 👤 @${display}\n📝 Motivo: ${d.reason || 'No especificado'}\n${SEP}\n`
       mentions.push(participantId)
     })
 
@@ -226,11 +233,12 @@ handler.all = async function (m) {
     const participant = findParticipantByDigits(meta, digitsOnly(sender))
     if (!participant) return
 
+    const display = participant.notify || participant.name || participant.id.split('@')[0]
     await this.groupParticipantsUpdate(m.chat, [participant.id], 'remove')
     await sleep(700)
 
     await this.sendMessage(m.chat, {
-      text: `🚫 *USUARIO BLOQUEADO — LISTA NEGRA*\n━━━━━━━━━━━━━━━━━━━━\n👤 @${participant.id.split('@')[0]}\n🚷 *Expulsión automática*\n━━━━━━━━━━━━━━━━━━━━`,
+      text: `🚫 *USUARIO BLOQUEADO — LISTA NEGRA*\n━━━━━━━━━━━━━━━━━━━━\n👤 @${display}\n🚷 *Expulsión automática*\n━━━━━━━━━━━━━━━━━━━━`,
       mentions: [participant.id]
     })
   } catch {}
@@ -256,12 +264,13 @@ handler.before = async function (m) {
       if (!participant) continue
 
       const reason = data.reason || 'No especificado'
+      const display = participant.notify || participant.name || participant.id.split('@')[0]
 
       await this.groupParticipantsUpdate(m.chat, [participant.id], 'remove')
       await sleep(700)
 
       await this.sendMessage(m.chat, {
-        text: `🚨 *USUARIO EN LISTA NEGRA*\n━━━━━━━━━━━━━━━━━━━━\n👤 @${participant.id.split('@')[0]}\n📝 *Motivo:* ${reason}\n🚷 *Expulsión inmediata*\n━━━━━━━━━━━━━━━━━━━━`,
+        text: `🚨 *USUARIO EN LISTA NEGRA*\n━━━━━━━━━━━━━━━━━━━━\n👤 @${display}\n📝 *Motivo:* ${reason}\n🚷 *Expulsión inmediata*\n━━━━━━━━━━━━━━━━━━━━`,
         mentions: [participant.id]
       })
     }
