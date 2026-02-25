@@ -1,4 +1,4 @@
-// 📂 plugins/propietario-listanegra.js — FELI 2026 — BLACKLIST JSON 🔥
+// 📂 plugins/propietario-listanegra.js — FELI 2025 — BLACKLIST JSON 🔥
 
 import fs from 'fs'
 import path from 'path'
@@ -6,10 +6,10 @@ import path from 'path'
 const DATABASE_DIR = './database'
 const BLACKLIST_FILE = path.join(DATABASE_DIR, 'blacklist.json')
 
-// Crear carpeta si no existe
+// 🔹 Crear carpeta si no existe
 if (!fs.existsSync(DATABASE_DIR)) fs.mkdirSync(DATABASE_DIR, { recursive: true })
 
-// Crear archivo si no existe
+// 🔹 Crear archivo si no existe
 if (!fs.existsSync(BLACKLIST_FILE)) fs.writeFileSync(BLACKLIST_FILE, JSON.stringify({}))
 
 function sleep(ms) {
@@ -49,14 +49,20 @@ function findParticipantByDigits(metadata, digits) {
 // ================= BASE DE DATOS =================
 
 function readBlacklist() {
-  try { return JSON.parse(fs.readFileSync(BLACKLIST_FILE)) } catch { return {} }
+  try {
+    return JSON.parse(fs.readFileSync(BLACKLIST_FILE))
+  } catch {
+    return {}
+  }
 }
 
 function writeBlacklist(data) {
   fs.writeFileSync(BLACKLIST_FILE, JSON.stringify(data, null, 2))
 }
 
+// =====================================================
 // ================= HANDLER PRINCIPAL =================
+// =====================================================
 
 const handler = async (m, { conn, command, text }) => {
   const SEP = '━━━━━━━━━━━━━━━━━━━━'
@@ -64,13 +70,13 @@ const handler = async (m, { conn, command, text }) => {
 
   const dbUsers = readBlacklist()
 
-  // Reacciones rápidas
+  // ================= REACCIONES =================
   if (command === 'ln') await m.react('🚫')
   if (command === 'unln') await m.react('🕊️')
   if (command === 'vln') await m.react('📋')
   if (command === 'clrn') await m.react('🧹')
 
-  // AUTO-KICK AL CITAR
+  // ================= AUTO-KICK AL CITAR =================
   if (m.isGroup && m.quoted) {
     const quotedJid = normalizeJid(m.quoted.sender || m.quoted.participant)
     if (quotedJid && dbUsers[quotedJid]?.banned) {
@@ -82,7 +88,7 @@ const handler = async (m, { conn, command, text }) => {
           await conn.groupParticipantsUpdate(m.chat, [participant.id], 'remove')
           await sleep(700)
           await conn.sendMessage(m.chat, {
-            text: `${ICON.ban} *ELIMINACIÓN INMEDIATA — LISTA NEGRA*\n${SEP}\n👤 @${participant.id.split('@')[0]}\n📝 *Motivo:* ${reason}\n${SEP}`,
+            text: `${ICON.ban} *ELIMINACIÓN INMEDIATA — LISTA NEGRA*\n${SEP}\n👤 @${participant.notify || participant.id.split('@')[0]}\n📝 *Motivo:* ${reason}\n${SEP}`,
             mentions: [participant.id]
           })
         }
@@ -146,7 +152,7 @@ const handler = async (m, { conn, command, text }) => {
           await sleep(700)
 
           await conn.sendMessage(jid, {
-            text: `${ICON.ban} *USUARIO BLOQUEADO — LISTA NEGRA*\n${SEP}\n👤 @${participant.id.split('@')[0]}\n📝 *Motivo:* ${reason}\n🚷 *Expulsión automática*\n${SEP}`,
+            text: `${ICON.ban} *USUARIO BLOQUEADO — LISTA NEGRA*\n${SEP}\n👤 @${participant.notify || participant.id.split('@')[0]}\n📝 *Motivo:* ${reason}\n🚷 *Expulsión automática*\n${SEP}`,
             mentions: [participant.id]
           })
         } catch {}
@@ -179,10 +185,16 @@ const handler = async (m, { conn, command, text }) => {
     let msg = `${ICON.ban} *LISTA NEGRA — ${bannedList.length} USUARIOS*\n${SEP}\n`
     const mentions = []
 
+    const meta = m.isGroup ? await conn.groupMetadata(m.chat) : null
+
     bannedList.forEach(([jid, d], i) => {
-      const display = jid.split('@')[0] // Mostrar limpio
+      let display = digitsOnly(jid)
+      if (meta) {
+        const participant = meta.participants.find(p => p.id === jid)
+        if (participant?.notify) display = participant.notify
+      }
       msg += `*${i + 1}.* 👤 @${display}\n📝 ${d.reason}\n\n`
-      mentions.push(jid) // JID completo para mención
+      mentions.push(jid)
     })
 
     msg += SEP
@@ -197,7 +209,10 @@ const handler = async (m, { conn, command, text }) => {
   }
 }
 
+// =====================================================
 // ================= AUTO-KICK SI HABLA =================
+// =====================================================
+
 handler.all = async function (m) {
   try {
     if (!m.isGroup) return
@@ -213,13 +228,16 @@ handler.all = async function (m) {
     await sleep(700)
 
     await this.sendMessage(m.chat, {
-      text: `🚫 *USUARIO BLOQUEADO — LISTA NEGRA*\n━━━━━━━━━━━━━━━━━━━━\n👤 @${participant.id.split('@')[0]}\n🚷 *Expulsión automática*\n━━━━━━━━━━━━━━━━━━━━`,
+      text: `🚫 *USUARIO BLOQUEADO — LISTA NEGRA*\n━━━━━━━━━━━━━━━━━━━━\n👤 @${participant.notify || participant.id.split('@')[0]}\n🚷 *Expulsión automática*\n━━━━━━━━━━━━━━━━━━━━`,
       mentions: [participant.id]
     })
   } catch {}
 }
 
-// ================= AUTO-KICK + AVISO AL ENTRAR =================
+// =====================================================
+// ========== AUTO-KICK + AVISO AL ENTRAR =================
+// =====================================================
+
 handler.before = async function (m) {
   try {
     if (![27, 31].includes(m.messageStubType)) return
@@ -241,7 +259,7 @@ handler.before = async function (m) {
       await sleep(700)
 
       await this.sendMessage(m.chat, {
-        text: `🚨 *USUARIO EN LISTA NEGRA*\n━━━━━━━━━━━━━━━━━━━━\n👤 @${participant.id.split('@')[0]}\n📝 *Motivo:* ${reason}\n🚷 *Expulsión inmediata*\n━━━━━━━━━━━━━━━━━━━━`,
+        text: `🚨 *USUARIO EN LISTA NEGRA*\n━━━━━━━━━━━━━━━━━━━━\n👤 @${participant.notify || participant.id.split('@')[0]}\n📝 *Motivo:* ${reason}\n🚷 *Expulsión inmediata*\n━━━━━━━━━━━━━━━━━━━━`,
         mentions: [participant.id]
       })
     }
@@ -249,6 +267,7 @@ handler.before = async function (m) {
 }
 
 // ================= CONFIG =================
+
 handler.help = ['ln', 'unln', 'vln', 'clrn']
 handler.tags = ['owner']
 handler.command = ['ln', 'unln', 'vln', 'clrn']
