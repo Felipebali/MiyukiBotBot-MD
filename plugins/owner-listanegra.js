@@ -88,7 +88,7 @@ const handler = async (m, { conn, command, text }) => {
           await conn.groupParticipantsUpdate(m.chat, [participant.id], 'remove')
           await sleep(700)
           await conn.sendMessage(m.chat, {
-            text: `${ICON.ban} *ELIMINACIÓN INMEDIATA — LISTA NEGRA*\n${SEP}\n👤 @${participant.notify || participant.id.split('@')[0]}\n📝 *Motivo:* ${reason}\n${SEP}`,
+            text: `${ICON.ban} *ELIMINACIÓN INMEDIATA — LISTA NEGRA*\n${SEP}\n👤 @${participant.notify || participant.id.split('@')[0]}\n📝 *Motivo:* ${reason}\n🚷 *Expulsión automática*\n${SEP}`,
             mentions: [participant.id]
           })
         }
@@ -182,22 +182,24 @@ const handler = async (m, { conn, command, text }) => {
   else if (command === 'vln') {
     if (!bannedList.length) return conn.reply(m.chat, `${ICON.ok} Lista negra vacía.`, m)
 
-    let msg = `${ICON.ban} *LISTA NEGRA — ${bannedList.length} USUARIOS*\n${SEP}\n`
+    const SEP = '━━━━━━━━━━━━━━━━━━━━'
+    const ICON = { ban: '🚫' }
+    const meta = m.isGroup ? await conn.groupMetadata(m.chat) : null
     const mentions = []
 
-    const meta = m.isGroup ? await conn.groupMetadata(m.chat) : null
+    let msg = ''
 
-    bannedList.forEach(([jid, d], i) => {
-      let display = digitsOnly(jid)
+    bannedList.forEach(([jid, d]) => {
+      let display = jid.split('@')[0]
       if (meta) {
         const participant = meta.participants.find(p => p.id === jid)
         if (participant?.notify) display = participant.notify
       }
-      msg += `*${i + 1}.* 👤 @${display}\n📝 ${d.reason}\n\n`
+
+      msg += `${ICON.ban} *USUARIO BLOQUEADO — LISTA NEGRA*\n${SEP}\n👤 @${display}\n📝 *Motivo:* ${d.reason || 'No especificado'}\n🚷 *Expulsión automática*\n${SEP}\n`
       mentions.push(jid)
     })
 
-    msg += SEP
     await conn.sendMessage(m.chat, { text: msg.trim(), mentions })
   }
 
@@ -205,7 +207,7 @@ const handler = async (m, { conn, command, text }) => {
   else if (command === 'clrn') {
     for (const jid in dbUsers) dbUsers[jid].banned = false
     writeBlacklist(dbUsers)
-    await conn.sendMessage(m.chat, { text: `${ICON.ok} *LISTA NEGRA VACIADA*\n${SEP}` })
+    await conn.sendMessage(m.chat, { text: `✅ *LISTA NEGRA VACIADA*\n━━━━━━━━━━━━━━━━━━━━` })
   }
 }
 
