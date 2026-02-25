@@ -1,4 +1,4 @@
-// plugins/admin-warn.js — FELI 2026 — ADVERTENCIAS PARA ADMINS 🔥
+// plugins/admin-warn.js — FELI 2026 — ADVERTENCIAS PARA ADMINS SIMPLIFICADO 🔥
 import fs from 'fs'
 import path from 'path'
 
@@ -18,16 +18,7 @@ function saveWarns(warns) {
 
 function normalizeJid(jid) {
   if (!jid) return null
-  return jid.replace(/@c\.us$/, '@s.whatsapp.net').replace(/@s\.whatsapp\.net$/, '@s.whatsapp.net')
-}
-
-// 🔹 Lista universal de owners
-function getOwnersJid() {
-  return (global.owner || []).map(v => {
-    if (Array.isArray(v)) v = v[0]
-    if (typeof v !== 'string') return null
-    return v.replace(/[^0-9]/g, '') + '@s.whatsapp.net'
-  }).filter(Boolean)
+  return jid.replace(/@c\.us$/, '@s.whatsapp.net').replace(/@s\.whatsapp.net$/, '@s.whatsapp.net')
 }
 
 const handler = async (m, { conn, text = '', usedPrefix, command }) => {
@@ -37,29 +28,12 @@ const handler = async (m, { conn, text = '', usedPrefix, command }) => {
   if (!warnsDB[m.chat]) warnsDB[m.chat] = {}
   const warns = warnsDB[m.chat]
 
-  const meta = await conn.groupMetadata(m.chat)
-  const participants = meta.participants
-
-  const ownersJid = getOwnersJid()
   const sender = normalizeJid(m.sender)
-
-  // 🔒 Solo owners pueden ciertos comandos
-  const ownerOnly = ['clearadmad']
-  if (ownerOnly.includes(command) && !ownersJid.includes(sender))
-    return m.reply('⚠️ Solo los dueños del bot pueden usar este comando.')
-
-  // 🔹 Determinar admin objetivo
-  let target = m.quoted?.sender || m.mentionedJid?.[0]
+  let target = m.quoted?.sender || m.mentionedJid?.[0] || sender
   target = normalizeJid(target)
-  if (target) {
-    const adminCheck = participants.find(p => p.id === target)
-    if (!adminCheck?.admin) return m.reply('⚠️ Solo puedes advertir a administradores.')
-  }
 
   // ---------- ⚠️ PONER ADVERTENCIA ----------
   if (command === 'admad') {
-    if (!target) return m.reply(`⚠️ Debes mencionar o responder a un administrador.\nEj: ${usedPrefix}${command} @admin [motivo]`)
-
     let motivo = text?.replace(`@${target.split('@')[0]}`, '').replace(`${usedPrefix}${command}`, '').trim()
     if (!motivo) motivo = 'Sin especificar 💤'
 
@@ -75,17 +49,22 @@ const handler = async (m, { conn, text = '', usedPrefix, command }) => {
     const count = warns[target].count
     if (count >= 3) {
       try {
+        // Intentar despromover si es admin
         await conn.groupParticipantsUpdate(m.chat, [target], 'demote')
         delete warns[target]
         saveWarns(warnsDB)
-        return conn.sendMessage(m.chat, { text: `🚫 *El administrador @${target.split('@')[0]} ha sido despromovido por acumular 3 advertencias.*\n🧹 Adiós 👋`, mentions: [target], quoted: m })
+        return conn.sendMessage(m.chat, { 
+          text: `🚫 *El administrador @${target.split('@')[0]} ha sido despromovido por acumular 3 advertencias.*\n🧹 Adiós 👋`, 
+          mentions: [target], 
+          quoted: m 
+        })
       } catch {
-        return m.reply('❌ No se pudo despromover al administrador. Verifica los permisos del bot.')
+        return m.reply('❌ No se pudo despromover al usuario. Puede que no sea admin o el bot no tenga permisos.')
       }
     } else {
       const restantes = 3 - count
       return conn.sendMessage(m.chat, {
-        text: `⚠️ *Advertencia para admin:* @${target.split('@')[0]}\n📝 Motivo: ${motivo}\n📋 Total: ${count}/3\n🕒 Restan *${restantes}*`,
+        text: `⚠️ *Advertencia:* @${target.split('@')[0]}\n📝 Motivo: ${motivo}\n📋 Total: ${count}/3\n🕒 Restan *${restantes}*`,
         mentions: [target],
         quoted: m
       })
@@ -94,7 +73,7 @@ const handler = async (m, { conn, text = '', usedPrefix, command }) => {
 
   // ---------- 🟢 QUITAR ADVERTENCIA ----------
   else if (command === 'unadmad') {
-    if (!target) return m.reply('⚠️ Debes mencionar o responder al administrador para quitarle una advertencia.')
+    if (!target) return m.reply('⚠️ Debes mencionar o responder al usuario para quitarle una advertencia.')
     const userWarn = warns[target]
     if (!userWarn || !userWarn.count)
       return m.reply(`✅ @${target.split('@')[0]} no tiene advertencias.`)
@@ -106,7 +85,7 @@ const handler = async (m, { conn, text = '', usedPrefix, command }) => {
 
     await conn.sendMessage(m.chat, { react: { text: '🟢', key: m.key } })
     return conn.sendMessage(m.chat, {
-      text: `🟢 *Advertencia retirada a admin:* @${target.split('@')[0]}\n📋 Ahora tiene *${userWarn?.count || 0}/3* advertencias.`,
+      text: `🟢 *Advertencia retirada a usuario:* @${target.split('@')[0]}\n📋 Ahora tiene *${userWarn?.count || 0}/3* advertencias.`,
       mentions: [target],
       quoted: m
     })
@@ -115,9 +94,9 @@ const handler = async (m, { conn, text = '', usedPrefix, command }) => {
   // ---------- 📜 LISTA DE ADVERTENCIAS ----------
   else if (command === 'listadmad') {
     const entries = Object.entries(warns).filter(([_, w]) => w.count > 0)
-    if (!entries.length) return m.reply('✅ No hay administradores con advertencias.')
+    if (!entries.length) return m.reply('✅ No hay usuarios con advertencias.')
 
-    let textList = '⚠️ *Advertencias activas a administradores:*\n\n'
+    let textList = '⚠️ *Advertencias activas:*\n\n'
     let mentions = []
 
     for (const [jid, w] of entries) {
@@ -134,7 +113,7 @@ const handler = async (m, { conn, text = '', usedPrefix, command }) => {
   else if (command === 'clearadmad') {
     Object.keys(warns).forEach(k => delete warns[k])
     saveWarns(warnsDB)
-    return conn.sendMessage(m.chat, { text: '🧹 Todas las advertencias a administradores han sido eliminadas.' })
+    return conn.sendMessage(m.chat, { text: '🧹 Todas las advertencias han sido eliminadas.' })
   }
 }
 
