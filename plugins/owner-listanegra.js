@@ -1,15 +1,13 @@
-// 📂 plugins/propietario-listanegra.js — FELI 2025 — BLACKLIST JSON 🔥
-
 import fs from 'fs'
 import path from 'path'
 
 const DATABASE_DIR = './database'
 const BLACKLIST_FILE = path.join(DATABASE_DIR, 'blacklist.json')
 
-// 🔹 Crear carpeta si no existe
+// Crear carpeta si no existe
 if (!fs.existsSync(DATABASE_DIR)) fs.mkdirSync(DATABASE_DIR, { recursive: true })
 
-// 🔹 Crear archivo si no existe
+// Crear archivo si no existe
 if (!fs.existsSync(BLACKLIST_FILE)) fs.writeFileSync(BLACKLIST_FILE, JSON.stringify({}))
 
 function sleep(ms) {
@@ -49,20 +47,14 @@ function findParticipantByDigits(metadata, digits) {
 // ================= BASE DE DATOS =================
 
 function readBlacklist() {
-  try {
-    return JSON.parse(fs.readFileSync(BLACKLIST_FILE))
-  } catch {
-    return {}
-  }
+  try { return JSON.parse(fs.readFileSync(BLACKLIST_FILE)) } catch { return {} }
 }
 
 function writeBlacklist(data) {
   fs.writeFileSync(BLACKLIST_FILE, JSON.stringify(data, null, 2))
 }
 
-// =====================================================
 // ================= HANDLER PRINCIPAL =================
-// =====================================================
 
 const handler = async (m, { conn, command, text }) => {
   const SEP = '━━━━━━━━━━━━━━━━━━━━'
@@ -70,13 +62,13 @@ const handler = async (m, { conn, command, text }) => {
 
   const dbUsers = readBlacklist()
 
-  // ================= REACCIONES =================
+  // Reacciones rápidas
   if (command === 'ln') await m.react('🚫')
   if (command === 'unln') await m.react('🕊️')
   if (command === 'vln') await m.react('📋')
   if (command === 'clrn') await m.react('🧹')
 
-  // ================= AUTO-KICK AL CITAR =================
+  // AUTO-KICK AL CITAR
   if (m.isGroup && m.quoted) {
     const quotedJid = normalizeJid(m.quoted.sender || m.quoted.participant)
     if (quotedJid && dbUsers[quotedJid]?.banned) {
@@ -187,7 +179,7 @@ const handler = async (m, { conn, command, text }) => {
 
     bannedList.forEach(([jid, d], i) => {
       msg += `*${i + 1}.* 👤 @${jid.split('@')[0]}\n📝 ${d.reason}\n\n`
-      mentions.push(jid)
+      mentions.push(jid.split('@')[0] + '@s.whatsapp.net')
     })
 
     msg += SEP
@@ -202,10 +194,7 @@ const handler = async (m, { conn, command, text }) => {
   }
 }
 
-// =====================================================
 // ================= AUTO-KICK SI HABLA =================
-// =====================================================
-
 handler.all = async function (m) {
   try {
     if (!m.isGroup) return
@@ -227,10 +216,7 @@ handler.all = async function (m) {
   } catch {}
 }
 
-// =====================================================
-// ========== AUTO-KICK + AVISO AL ENTRAR =================
-// =====================================================
-
+// ================= AUTO-KICK + AVISO AL ENTRAR =================
 handler.before = async function (m) {
   try {
     if (![27, 31].includes(m.messageStubType)) return
@@ -260,7 +246,6 @@ handler.before = async function (m) {
 }
 
 // ================= CONFIG =================
-
 handler.help = ['ln', 'unln', 'vln', 'clrn']
 handler.tags = ['owner']
 handler.command = ['ln', 'unln', 'vln', 'clrn']
