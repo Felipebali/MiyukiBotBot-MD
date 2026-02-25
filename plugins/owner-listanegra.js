@@ -1,5 +1,5 @@
-import fs from 'fs'
-import path from 'path'
+const fs = require('fs')
+const path = require('path')
 
 const filePath = path.join('./database', 'blacklist.json')
 
@@ -9,17 +9,17 @@ if (!fs.existsSync('./database')) fs.mkdirSync('./database')
 // Cargar lista negra
 let blacklist = []
 if (fs.existsSync(filePath)) {
-    try {
-        blacklist = JSON.parse(fs.readFileSync(filePath))
-    } catch (e) {
-        console.log('Error al leer blacklist.json', e)
-        blacklist = []
-    }
+  try {
+    blacklist = JSON.parse(fs.readFileSync(filePath))
+  } catch (e) {
+    console.log('Error al leer blacklist.json', e)
+    blacklist = []
+  }
 }
 
-// Guardar lista negra en archivo
+// Guardar lista negra
 const saveBlacklist = () => {
-    fs.writeFileSync(filePath, JSON.stringify(blacklist, null, 2))
+  fs.writeFileSync(filePath, JSON.stringify(blacklist, null, 2))
 }
 
 let handler = async (m, { conn, text, usedPrefix, command }) => {
@@ -77,10 +77,11 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
 }
 
 // 🔥 AUTO KICK CUANDO ENTRA AL GRUPO
-handler.before = async function (m, { conn, participants }) {
+handler.before = async function (m, { conn }) {
   if (!m.isGroup) return
+  if (!m.addedParticipants) return
 
-  for (let user of participants) {
+  for (let user of m.addedParticipants) {
     if (blacklist.includes(user)) {
       try {
         await conn.groupParticipantsUpdate(m.chat, [user], 'remove')
@@ -95,4 +96,4 @@ handler.command = ['ln', 'ln2', 'vln']
 handler.rowner = true
 handler.group = true
 
-export default handler
+module.exports = handler
