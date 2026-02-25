@@ -191,14 +191,17 @@ const handler = async (m, { conn, command, text }) => {
 
     bannedList.forEach(([jid, d], index) => {
       let display = jid.split('@')[0]
+      let mentionId = jid
+
       if (meta) {
         const participant = meta.participants.find(p => p.id === jid)
         if (participant?.notify) display = participant.notify
+        if (participant) mentionId = participant.id
       }
 
-      // Solo usuario y motivo, con mención
+      // 🔹 Usuario + motivo, con mención correcta para que funcione auto-kick
       msg += `${index + 1}. ${ICON.ban} 👤 @${display}\n📝 Motivo: ${d.reason || 'No especificado'}\n${SEP}\n`
-      mentions.push(jid)
+      mentions.push(mentionId)
     })
 
     await conn.sendMessage(m.chat, { text: msg.trim(), mentions })
