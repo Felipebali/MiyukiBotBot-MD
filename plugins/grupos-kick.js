@@ -1,24 +1,14 @@
-// 🔪 Kick con sistema universal de owners
-
-// 🧠 Sistema universal de owners (anti errores)
-function getOwnersJid() {
-  return (global.owner || [])
-    .map(v => {
-      if (Array.isArray(v)) v = v[0]
-      if (typeof v !== 'string') return null
-      return v.replace(/[^0-9]/g, '') + '@s.whatsapp.net'
-    })
-    .filter(Boolean)
-}
-
 const handler = async (m, { conn, isAdmin }) => {
+  const emoji = '🔪'
 
-  if (!m.isGroup) return
+  // Normalizar números
+  const normalize = jid => String(jid || '').replace(/\D/g, '')
 
-  const ownersJid = getOwnersJid()
-  const sender = conn.decodeJid(m.sender)
+  const sender = normalize(conn.decodeJid(m.sender))
 
-  // ---------- INFO GRUPO ----------
+  const ownersBot = ['59898719147', '59896026646', '59892363485']
+
+  // INFO GRUPO
   let groupInfo
   try {
     groupInfo = await conn.groupMetadata(m.chat)
@@ -26,13 +16,16 @@ const handler = async (m, { conn, isAdmin }) => {
     return conn.reply(m.chat, '❌ No se pudo obtener información del grupo.', m)
   }
 
-  const ownerGroup = conn.decodeJid(groupInfo.owner || '')
-  const botJid = conn.decodeJid(conn.user.id)
+  const ownerGroup = groupInfo.owner
+    ? normalize(conn.decodeJid(groupInfo.owner))
+    : null
 
-  const protectedList = [...ownersJid, ownerGroup, botJid].filter(Boolean)
+  const botJid = normalize(conn.decodeJid(conn.user?.id || conn.user?.jid))
 
-  // ---------- PERMISOS ----------
-  if (!isAdmin && !ownersJid.includes(sender) && sender !== ownerGroup) {
+  const protectedList = [...ownersBot, botJid, ownerGroup].filter(Boolean)
+
+  // PERMISOS
+  if (!isAdmin && !ownersBot.includes(sender) && sender !== ownerGroup) {
     return conn.reply(
       m.chat,
       '❌ Solo admins, dueño del grupo o dueños del bot pueden usar este comando.',
@@ -40,8 +33,12 @@ const handler = async (m, { conn, isAdmin }) => {
     )
   }
 
-  // ---------- DETECTAR USUARIO ----------
-  let user = m.mentionedJid?.[0] || m.quoted?.sender
+  // DETECTAR USUARIO (MENCIÓN O RESPUESTA)
+  let user =
+    m.mentionedJid?.[0] ||
+    m.quoted?.sender ||
+    (m.quoted ? m.quoted.participant : null)
+
   if (!user) {
     return conn.reply(
       m.chat,
@@ -51,21 +48,26 @@ const handler = async (m, { conn, isAdmin }) => {
   }
 
   user = conn.decodeJid(user)
+  const userNorm = normalize(user)
 
-  // ---------- PROTEGIDOS ----------
-  if (protectedList.includes(user)) {
-    return conn.reply(
-      m.chat,
-      '😎 No puedes eliminar a un usuario protegido.',
-      m
-    )
+  // INTENTO DE EXPULSAR AL OWNER DEL GRUPO
+  if (userNorm === ownerGroup && sender !== ownerGroup && !ownersBot.includes(sender)) {
+    return conn.sendMessage(m.chat, {
+      text: `😏 Tranquilo campeón... @${user.split('@')[0]} es el dueño del grupo.`,
+      mentions: [user]
+    })
   }
 
-  // ---------- EXPULSAR ----------
+  // USUARIO PROTEGIDO
+  if (protectedList.includes(userNorm)) {
+    return conn.reply(m.chat, '😎 Es imposible eliminar a alguien protegido.', m)
+  }
+
+  // EXPULSAR
   try {
     await conn.groupParticipantsUpdate(m.chat, [user], 'remove')
 
-    try { await m.react('🔪') } catch {}
+    try { await m.react(emoji) } catch {}
 
   } catch (err) {
     console.log('Error expulsando:', err)
@@ -78,8 +80,8 @@ const handler = async (m, { conn, isAdmin }) => {
 }
 
 handler.help = ['k @usuario']
-handler.tags = ['group']
-handler.command = ['k', 'kick', 'echar', 'sacar']
+handler.tags = ['grupo']
+handler.command = ['k', 'kick', 'echar', 'hechar', 'sacar']
 handler.group = true
 handler.admin = true
 handler.botAdmin = true
