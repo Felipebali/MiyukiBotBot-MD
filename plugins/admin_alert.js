@@ -44,6 +44,7 @@ const handler = async (m, { conn, command, text }) => {
   const SEP = '━━━━━━━━━━━━━━━━━━━━'
   const dbAlerts = readAlerts()
 
+  // Determinar admin objetivo
   let targetJid = null
   if (m.mentionedJid?.length) targetJid = normalizeJid(m.mentionedJid[0])
   else if (m.quoted) targetJid = normalizeJid(m.quoted.sender || m.quoted.participant)
@@ -56,9 +57,10 @@ const handler = async (m, { conn, command, text }) => {
   if (!dbAlerts[m.chat]) dbAlerts[m.chat] = {}
   if (!dbAlerts[m.chat][targetJid]) dbAlerts[m.chat][targetJid] = { count: 0, reasons: [] }
 
+  const reason = text?.trim() || 'No especificado'
+
   // ================= DAR ALERTA =================
   if (command === 'alerta') {
-    const reason = text?.replace(/@[\d]+/g, '').trim() || 'No especificado'
     dbAlerts[m.chat][targetJid].count += 1
     dbAlerts[m.chat][targetJid].reasons.push({ reason, by: m.sender, date: new Date().toISOString() })
     writeAlerts(dbAlerts)
@@ -118,10 +120,13 @@ const handler = async (m, { conn, command, text }) => {
   }
 }
 
-handler.help = ['alerta', 'quitaralerta', 'veralertas', 'limpiaralertas']
+// ================= CONFIG =================
+handler.help = ['alerta','quitaralerta','veralertas','limpiaralertas']
 handler.tags = ['admin']
-handler.command = ['alerta', 'quitaralerta', 'veralertas', 'limpiaralertas']
+handler.command = ['alerta','quitaralerta','veralertas','limpiaralertas']
 handler.group = true
 handler.rowner = false
+
+console.log('✅ Plugin admin-alert cargado')
 
 export default handler
