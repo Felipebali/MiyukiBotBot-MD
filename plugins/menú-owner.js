@@ -24,6 +24,12 @@ let handler = async (m, { conn }) => {
 • .quitar @user <insignia> — Quitar insignia ❌
 • .verinsignias @user — Ver insignias 📋
 
+🚨 *Advertencias para Administradores (Solo Owner)*
+• .admad @admin [motivo] — Dar advertencia ⚠️
+• .unadmad @admin — Quitar advertencia 🟢
+• .listadmad — Ver lista de advertencias 📋
+• .clearadmad — Limpiar todas las advertencias 🧹
+
 🚫 *Lista Negra*
 • .ln @user — Agregar ⚠️
 • .unln @user — Quitar ✅
