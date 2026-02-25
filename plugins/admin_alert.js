@@ -31,7 +31,6 @@ let handler = async (m, { conn, text = '', usedPrefix = '.', command }) => {
   const ownersJid = getOwnersJid()
   const sender = normalizeJid(m.sender)
 
-  // 🔒 SOLO OWNER
   if (!ownersJid.includes(sender)) {
     return conn.sendMessage(m.chat, { text: '❌ Solo los dueños del bot pueden usar este comando.', quoted: m })
   }
@@ -45,23 +44,21 @@ let handler = async (m, { conn, text = '', usedPrefix = '.', command }) => {
   const meta = await conn.groupMetadata(m.chat)
   const participants = meta.participants
 
-  // Determinar admin objetivo
-  const targetRaw = m.mentionedJid?.[0] || m.quoted?.sender
-  const target = normalizeJid(targetRaw)
+  // 🔹 Obtener admin objetivo (mención o respuesta)
+  let target
+  if (m.quoted) target = normalizeJid(m.quoted.sender)
+  else if (m.mentionedJid && m.mentionedJid.length) target = normalizeJid(m.mentionedJid[0])
+
   if (!target) return conn.sendMessage(m.chat, { text: `⚠️ Debes mencionar o responder a un administrador.\nEj: ${usedPrefix}${command} @admin [motivo]`, quoted: m })
 
   const targetAdmin = participants.find(p => p.id === target)
   if (!targetAdmin?.admin) return conn.sendMessage(m.chat, { text: '⚠️ Solo puedes advertir a administradores.', quoted: m })
 
   if (!warns[target]) warns[target] = { count: 0, motivos: [] }
-  if (!Array.isArray(warns[target].motivos)) warns[target].motivos = []
 
   // ---------- ⚠️ PONER ADVERTENCIA ----------
   if (command === 'admad') {
-    let motivo = text.trim()
-      .replace(new RegExp(`^@${target.split('@')[0]}`, 'gi'), '')
-      .replace(new RegExp(`^${usedPrefix}${command}`, 'gi'), '')
-      .trim()
+    let motivo = text.replace(`@${target.split('@')[0]}`, '').replace(`${usedPrefix}${command}`, '').trim()
     if (!motivo) motivo = 'Sin especificar 💤'
 
     const fecha = new Date().toLocaleString('es-UY', { timeZone: 'America/Montevideo' })
@@ -79,17 +76,12 @@ let handler = async (m, { conn, text = '', usedPrefix = '.', command }) => {
         warns[target] = { count: 0, motivos: [] }
         saveWarns(warnsDB)
         return conn.sendMessage(m.chat, { text: `🚫 *El administrador @${target.split('@')[0]} ha sido despromovido por acumular 3 advertencias.*\n🧹 Adiós 👋`, mentions: [target], quoted: m })
-      } catch (e) {
-        console.error(e)
+      } catch {
         return conn.sendMessage(m.chat, { text: '❌ No se pudo despromover al administrador. Verifica los permisos del bot.', quoted: m })
       }
     } else {
       const restantes = 3 - count
-      return conn.sendMessage(m.chat, { 
-        text: `⚠️ *Advertencia para admin:* @${target.split('@')[0]}\n📝 Motivo: ${motivo}\n📅 Fecha: ${fecha}\n\n📋 Total: ${count}/3\n🕒 Restan *${restantes}* para ser despromovido.`, 
-        mentions: [target],
-        quoted: m 
-      })
+      return conn.sendMessage(m.chat, { text: `⚠️ *Advertencia para admin:* @${target.split('@')[0]}\n📝 Motivo: ${motivo}\n📅 Fecha: ${fecha}\n📋 Total: ${count}/3\n🕒 Restan *${restantes}* para ser despromovido.`, mentions: [target], quoted: m })
     }
   }
 
@@ -100,7 +92,7 @@ let handler = async (m, { conn, text = '', usedPrefix = '.', command }) => {
 
     userWarn.count = Math.max(0, userWarn.count - 1)
     userWarn.motivos?.pop()
-    if (userWarn.count === 0 && (!userWarn.motivos || userWarn.motivos.length === 0)) delete warns[target]
+    if (userWarn.count === 0) delete warns[target]
     saveWarns(warnsDB)
 
     await conn.sendMessage(m.chat, { react: { text: '🟢', key: m.key } })
@@ -109,7 +101,7 @@ let handler = async (m, { conn, text = '', usedPrefix = '.', command }) => {
 
   // ---------- 📜 LISTA DE ADVERTENCIAS ----------
   else if (command === 'listadmad') {
-    const entries = Object.entries(warns).filter(([jid, w]) => w.count && w.count > 0)
+    const entries = Object.entries(warns).filter(([jid, w]) => w.count > 0)
     if (!entries.length) return conn.sendMessage(m.chat, { text: '✅ No hay administradores con advertencias.', quoted: m })
 
     let textList = '⚠️ *Advertencias activas a administradores:*\n\n'
@@ -133,11 +125,5 @@ let handler = async (m, { conn, text = '', usedPrefix = '.', command }) => {
   }
 }
 
-handler.command = [
-  'admad',    // poner advertencia
-  'unadmad',  // quitar advertencia
-  'listadmad',// ver lista
-  'clearadmad'// limpiar todas
-]
-
+handler.command = ['admad','unadmad','listadmad','clearadmad']
 export default handler
