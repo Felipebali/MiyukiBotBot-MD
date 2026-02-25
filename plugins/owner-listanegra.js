@@ -88,7 +88,7 @@ const handler = async (m, { conn, command, text }) => {
           await conn.groupParticipantsUpdate(m.chat, [participant.id], 'remove')
           await sleep(700)
           await conn.sendMessage(m.chat, {
-            text: `${ICON.ban} *ELIMINACIÓN INMEDIATA — LISTA NEGRA*\n${SEP}\n👤 +${participant.id.split('@')[0]}\n📝 *Motivo:* ${reason}\n${SEP}`,
+            text: `${ICON.ban} *ELIMINACIÓN INMEDIATA — LISTA NEGRA*\n${SEP}\n👤 @${participant.id.split('@')[0]}\n📝 *Motivo:* ${reason}\n${SEP}`,
             mentions: [participant.id]
           })
         }
@@ -152,7 +152,7 @@ const handler = async (m, { conn, command, text }) => {
           await sleep(700)
 
           await conn.sendMessage(jid, {
-            text: `${ICON.ban} *USUARIO BLOQUEADO — LISTA NEGRA*\n${SEP}\n👤 +${participant.id.split('@')[0]}\n📝 *Motivo:* ${reason}\n🚷 *Expulsión automática*\n${SEP}`,
+            text: `${ICON.ban} *USUARIO BLOQUEADO — LISTA NEGRA*\n${SEP}\n👤 @${participant.id.split('@')[0]}\n📝 *Motivo:* ${reason}\n🚷 *Expulsión automática*\n${SEP}`,
             mentions: [participant.id]
           })
         } catch {}
@@ -173,7 +173,7 @@ const handler = async (m, { conn, command, text }) => {
     writeBlacklist(dbUsers)
 
     await conn.sendMessage(m.chat, {
-      text: `${ICON.ok} *USUARIO LIBERADO*\n${SEP}\n👤 +${userJid.split('@')[0]}\n${SEP}`,
+      text: `${ICON.ok} *USUARIO LIBERADO*\n${SEP}\n👤 @${userJid.split('@')[0]}\n${SEP}`,
       mentions: [userJid]
     })
   }
@@ -186,8 +186,8 @@ const handler = async (m, { conn, command, text }) => {
     const mentions = []
 
     bannedList.forEach(([jid, d], i) => {
-      const addedBy = d.addedBy ? `+${d.addedBy.split('@')[0]}` : 'Desconocido'
-      msg += `*${i + 1}.* 👤 +${jid.split('@')[0]}\n📝 Razón: ${d.reason}\n👤 Añadido por: ${addedBy}\n\n`
+      const addedBy = d.addedBy ? `@${d.addedBy.split('@')[0]}` : 'Desconocido'
+      msg += `*${i + 1}.* 👤 @${jid.split('@')[0]}\n📝 Razón: ${d.reason}\n👤 Añadido por: ${addedBy}\n\n`
       mentions.push(jid)
     })
 
@@ -222,7 +222,7 @@ handler.all = async function (m) {
     await sleep(700)
 
     await this.sendMessage(m.chat, {
-      text: `🚫 *USUARIO BLOQUEADO — LISTA NEGRA*\n━━━━━━━━━━━━━━━━━━━━\n👤 +${participant.id.split('@')[0]}\n🚷 *Expulsión automática*\n━━━━━━━━━━━━━━━━━━━━`,
+      text: `🚫 *USUARIO BLOQUEADO — LISTA NEGRA*\n━━━━━━━━━━━━━━━━━━━━\n👤 @${participant.id.split('@')[0]}\n🚷 *Expulsión automática*\n━━━━━━━━━━━━━━━━━━━━`,
       mentions: [participant.id]
     })
   } catch {}
@@ -253,7 +253,7 @@ handler.before = async function (m) {
       await sleep(700)
 
       await this.sendMessage(m.chat, {
-        text: `🚨 *USUARIO EN LISTA NEGRA*\n━━━━━━━━━━━━━━━━━━━━\n👤 +${participant.id.split('@')[0]}\n📝 *Motivo:* ${reason}\n🚷 *Expulsión inmediata*\n━━━━━━━━━━━━━━━━━━━━`,
+        text: `🚨 *USUARIO EN LISTA NEGRA*\n━━━━━━━━━━━━━━━━━━━━\n👤 @${participant.id.split('@')[0]}\n📝 *Motivo:* ${reason}\n🚷 *Expulsión inmediata*\n━━━━━━━━━━━━━━━━━━━━`,
         mentions: [participant.id]
       })
     }
