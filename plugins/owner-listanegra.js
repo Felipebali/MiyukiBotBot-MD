@@ -174,8 +174,9 @@ const handler = async (m, { conn, command, text }) => {
     dbUsers[userJid] = { banned: false }
     writeBlacklist(dbUsers)
 
+    const display = userJid.split('@')[0]
     await conn.sendMessage(m.chat, {
-      text: `${ICON.ok} *USUARIO LIBERADO*\n${SEP}\n👤 @${userJid.split('@')[0]}\n${SEP}`,
+      text: `${ICON.ok} *USUARIO LIBERADO*\n${SEP}\n👤 @${display}\n${SEP}`,
       mentions: [userJid]
     })
   }
