@@ -56,8 +56,8 @@ let handler = async (m, { conn, text = '', usedPrefix = '.', command }) => {
   if (!warns[target]) warns[target] = { count: 0, motivos: [] }
   if (!Array.isArray(warns[target].motivos)) warns[target].motivos = []
 
-  // ---------- ⚠️ DAR ADVERTENCIA ----------
-  if (['admad','advertenciaadmin','alertadmin'].includes(command)) {
+  // ---------- ⚠️ PONER ADVERTENCIA ----------
+  if (command === 'admad') {
     let motivo = text.trim()
       .replace(new RegExp(`^@${target.split('@')[0]}`, 'gi'), '')
       .replace(new RegExp(`^${usedPrefix}${command}`, 'gi'), '')
@@ -94,7 +94,7 @@ let handler = async (m, { conn, text = '', usedPrefix = '.', command }) => {
   }
 
   // ---------- 🟢 QUITAR ADVERTENCIA ----------
-  else if (['unadmad','quitaradvertenciaadmin'].includes(command)) {
+  else if (command === 'unadmad') {
     const userWarn = warns[target]
     if (!userWarn || !userWarn.count) return conn.sendMessage(m.chat, { text: `✅ @${target.split('@')[0]} no tiene advertencias.`, mentions: [target], quoted: m })
 
@@ -108,7 +108,7 @@ let handler = async (m, { conn, text = '', usedPrefix = '.', command }) => {
   }
 
   // ---------- 📜 LISTA DE ADVERTENCIAS ----------
-  else if (['listadmad','listaadmin','warnadmin'].includes(command)) {
+  else if (command === 'listadmad') {
     const entries = Object.entries(warns).filter(([jid, w]) => w.count && w.count > 0)
     if (!entries.length) return conn.sendMessage(m.chat, { text: '✅ No hay administradores con advertencias.', quoted: m })
 
@@ -126,7 +126,7 @@ let handler = async (m, { conn, text = '', usedPrefix = '.', command }) => {
   }
 
   // ---------- 🧹 LIMPIAR TODAS LAS ADVERTENCIAS ----------
-  else if (['clearadmad','limpiaradvertenciasadmin'].includes(command)) {
+  else if (command === 'clearadmad') {
     Object.keys(warns).forEach(k => delete warns[k])
     saveWarns(warnsDB)
     return conn.sendMessage(m.chat, { text: '🧹 Todas las advertencias a administradores han sido eliminadas.', quoted: m })
@@ -134,10 +134,10 @@ let handler = async (m, { conn, text = '', usedPrefix = '.', command }) => {
 }
 
 handler.command = [
-  'admad','advertenciaadmin','alertadmin',
-  'unadmad','quitaradvertenciaadmin',
-  'listadmad','listaadmin','warnadmin',
-  'clearadmad','limpiaradvertenciasadmin'
+  'admad',    // poner advertencia
+  'unadmad',  // quitar advertencia
+  'listadmad',// ver lista
+  'clearadmad'// limpiar todas
 ]
 
 export default handler
