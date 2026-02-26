@@ -3,11 +3,15 @@ let handler = async (m, { conn, text, command, isOwner }) => {
   if (!isOwner) return
 
   const users = global.db.data.users
-  const mentioned = m.mentionedJid?.[0] || m.quoted?.sender
+
+  const mentioned =
+    m.mentionedJid?.[0] ||
+    m.quoted?.sender ||
+    (text.match(/@([0-9]{5,16})/)?.[1] + '@s.whatsapp.net')
 
   if (command === 'ln') {
 
-    if (!mentioned)
+    if (!mentioned || mentioned.includes('undefined'))
       return conn.reply(m.chat,
         '🚫 Menciona o responde al usuario\n\nEjemplo:\n.ln @usuario motivo',
         m)
@@ -33,7 +37,7 @@ let handler = async (m, { conn, text, command, isOwner }) => {
 
   if (command === 'unln') {
 
-    if (!mentioned)
+    if (!mentioned || mentioned.includes('undefined'))
       return conn.reply(m.chat, '🚫 Menciona al usuario.', m)
 
     if (users[mentioned]) {
@@ -82,6 +86,7 @@ handler.rowner = true
 export default handler
 
 
+
 // ================= AUTO KICK SI HABLA =================
 
 handler.all = async function (m) {
@@ -113,7 +118,7 @@ handler.all = async function (m) {
 
 // ================= AUTO KICK AL ENTRAR =================
 
-handler.before = async function (m, { participants }) {
+handler.before = async function (m) {
 
   if (!m.isGroup) return
   if (!m.messageStubType) return
