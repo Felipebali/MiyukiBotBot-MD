@@ -2,16 +2,24 @@ let handler = async (m, { conn, text, command, isOwner }) => {
 
   if (!isOwner) return
 
-  const users = global.db.data.users
+  const users = global.db.data.users || (global.db.data.users = {})
 
   const getUser = () => {
+
+    // ✅ mención
     if (m.mentionedJid?.length) return m.mentionedJid[0]
+
+    // ✅ citado
     if (m.quoted?.sender) return m.quoted.sender
 
-    let num = text.match(/\d{5,16}/)
-    if (num) return num[0] + '@s.whatsapp.net'
+    // ✅ número escrito manual
+    if (!text) return null
 
-    return null
+    let num = text.trim().split(' ')[0].replace(/[^0-9]/g, '')
+
+    if (num.length < 7) return null
+
+    return num + '@s.whatsapp.net'
   }
 
   const target = getUser()
@@ -22,10 +30,10 @@ let handler = async (m, { conn, text, command, isOwner }) => {
 
     if (!target)
       return conn.reply(m.chat,
-        '🚫 Menciona, responde o escribe el número\n\nEjemplo:\n.ln @user motivo',
+        '🚫 Menciona, responde o escribe el número válido\n\nEjemplo:\n.ln 598xxxx motivo',
         m)
 
-    let reason = text.replace(/@\d+/g, '').trim() || 'Sin motivo'
+    let reason = text.replace(/@\d+/g, '').replace(/\d+/g, '').trim() || 'Sin motivo'
 
     if (!users[target]) users[target] = {}
 
@@ -49,7 +57,7 @@ let handler = async (m, { conn, text, command, isOwner }) => {
   if (command === 'unln') {
 
     if (!target)
-      return conn.reply(m.chat, '🚫 Menciona o responde al usuario.', m)
+      return conn.reply(m.chat, '🚫 Usuario inválido.', m)
 
     if (users[target]) users[target].blacklist = false
 
