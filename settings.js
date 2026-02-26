@@ -13,10 +13,10 @@ global.botNumber = "" //Ejemplo: 573218138672
 
 global.owner = [
 ['59898719147', 'Feli', true], // tu número como dueño
-  ['59894051100', 'Agus', true], 
+  ['59896320503', 'Diame', true], 
   ['59892975182', 'Meli', true],
   ['119069730668723', 'FeliLID', true], // tu LID
-  [109569548242978', 'AgusLID', true],
+  ['27479704076469', 'DiamLID', true],
   ['275483598016526', 'MeliLID', true]
 ];
 
