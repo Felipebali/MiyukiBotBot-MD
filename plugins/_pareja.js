@@ -1,4 +1,4 @@
-// 🔹 handler amoroso completo — FELI 2026 (con 7 días para casarse)
+// 🔹 handler amoroso completo — FELI 2026 FIXED
 import fs from 'fs'
 import path from 'path'
 
@@ -11,21 +11,12 @@ if (!fs.existsSync(file)) fs.writeFileSync(file, JSON.stringify({}, null, 2))
 const loadDB = () => JSON.parse(fs.readFileSync(file))
 const saveDB = (data) => fs.writeFileSync(file, JSON.stringify(data, null, 2))
 
-function getOwnersJid() {
-  return (global.owner || [])
-    .map(v => {
-      if (Array.isArray(v)) v = v[0]
-      if (typeof v !== 'string') return null
-      return v.replace(/[^0-9]/g, '') + '@s.whatsapp.net'
-    })
-    .filter(Boolean)
-}
-
 let handler = async (m, { conn, command }) => {
   const db = loadDB()
   const sender = conn.decodeJid(m.sender)
   const ahora = Date.now()
 
+  // ✅ Crear usuario si no existe
   const getUser = (id) => {
     if (!db[id]) {
       db[id] = {
@@ -41,24 +32,19 @@ let handler = async (m, { conn, command }) => {
     return db[id]
   }
 
+  // ✅ Obtener target
   const getTarget = () => {
     if (m.mentionedJid?.length) return m.mentionedJid[0]
     if (m.quoted?.sender) return conn.decodeJid(m.quoted.sender)
     return null
   }
 
-  // 🔥 NUEVA FUNCIÓN TAG (muestra nombre real)
-  const tag = (id) => {
-    try {
-      return `@${conn.getName(id)}`
-    } catch {
-      return `@${id.split('@')[0]}`
-    }
-  }
+  // ✅ MENCIÓN REAL CLICKEABLE
+  const tag = (id) => '@' + id.split('@')[0]
 
   const tiempo = (ms) => {
     const dias = Math.floor(ms / 86400000)
-    return `${dias} días`
+    return `${dias} día(s)`
   }
 
   const frasesSoltero = [
@@ -71,7 +57,9 @@ let handler = async (m, { conn, command }) => {
   const fraseSoltero = () =>
     frasesSoltero[Math.floor(Math.random() * frasesSoltero.length)]
 
+  // ======================
   // 💌 PROPUESTA
+  // ======================
   if (command === 'pareja') {
     const target = getTarget()
     if (!target) return m.reply('💌 Menciona o responde al mensaje.')
@@ -81,10 +69,20 @@ let handler = async (m, { conn, command }) => {
     const tu = getUser(target)
 
     if (user.estado !== 'soltero')
-      return m.reply(`😡 Ya tienes pareja con ${tag(user.pareja)}`, null, { mentions: [user.pareja] })
+      return conn.reply(
+        m.chat,
+        `😡 Ya tienes pareja con ${tag(user.pareja)}`,
+        m,
+        { mentions: [user.pareja] }
+      )
 
     if (tu.estado !== 'soltero')
-      return m.reply(`😳 ${tag(target)} ya tiene pareja con ${tag(tu.pareja)}`, null, { mentions: [target, tu.pareja] })
+      return conn.reply(
+        m.chat,
+        `😳 ${tag(target)} ya tiene pareja con ${tag(tu.pareja)}`,
+        m,
+        { mentions: [target, tu.pareja] }
+      )
 
     tu.propuesta = sender
     tu.propuestaFecha = ahora
@@ -98,7 +96,9 @@ let handler = async (m, { conn, command }) => {
     )
   }
 
+  // ======================
   // ✅ ACEPTAR
+  // ======================
   if (command === 'aceptar') {
     const user = getUser(sender)
     if (!user.propuesta) return m.reply('💭 No tienes propuestas.')
@@ -130,7 +130,29 @@ let handler = async (m, { conn, command }) => {
     )
   }
 
-  // 💍 CASARSE
+  // ======================
+  // ❌ RECHAZAR
+  // ======================
+  if (command === 'rechazar') {
+    const user = getUser(sender)
+    if (!user.propuesta) return m.reply('❌ No tienes ninguna propuesta pendiente.')
+
+    const proposer = user.propuesta
+    user.propuesta = null
+    user.propuestaFecha = null
+    saveDB(db)
+
+    return conn.reply(
+      m.chat,
+      `💔 ${tag(sender)} rechazó la propuesta de ${tag(proposer)}.`,
+      m,
+      { mentions: [sender, proposer] }
+    )
+  }
+
+  // ======================
+  // 💍 CASARSE (7 días)
+  // ======================
   if (command === 'casarse') {
     const user = getUser(sender)
     const parejaId = user.pareja
@@ -162,7 +184,9 @@ let handler = async (m, { conn, command }) => {
     )
   }
 
+  // ======================
   // 💑 RELACIÓN
+  // ======================
   if (command === 'relacion') {
     const user = getUser(sender)
     if (!user.pareja) return m.reply(fraseSoltero())
@@ -179,8 +203,11 @@ let handler = async (m, { conn, command }) => {
 }
 
 handler.command = [
-  'pareja','aceptar','rechazar',
-  'casarse','relacion'
+  'pareja',
+  'aceptar',
+  'rechazar',
+  'casarse',
+  'relacion'
 ]
 
 export default handler
