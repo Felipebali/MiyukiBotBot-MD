@@ -36,6 +36,16 @@ let handler = async (m, { conn }) => {
 ┃ 🚻 *.genero a elección* – Configurar género
 ┗━━━━━━━━━━━━━━━━━━━━━┛
 
+┏━━━ 🧬 *HERMANOS* ━━━┓
+┃ 🤝 *.hermano* – Proponer hermandad
+┃ ✅ *.aceptarhermano* – Aceptar propuesta
+┃ ❌ *.rechazarhermano* – Rechazar propuesta
+┃ 💔 *.romperhermandad* – Romper hermandad
+┃ 🫂 *.abrazohermano* – Abrazar a tu hermano
+┃ 🛡️ *.proteger* – Proteger a tu hermano
+┃ 📊 *.relacionhermano* – Ver estado de hermandad
+┗━━━━━━━━━━━━━━━━━━━━━┛
+
 ┏━━━ 💕 *RELACIONES* ━━━┓
 ┃ 💘 *.pareja citando mensaje* – Proponer relación
 ┃ ✅ *.aceptar* – Aceptar propuesta
