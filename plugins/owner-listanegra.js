@@ -4,54 +4,65 @@ let handler = async (m, { conn, text, command, isOwner }) => {
 
   const users = global.db.data.users
 
-  const mentioned =
-    m.mentionedJid?.[0] ||
-    m.quoted?.sender ||
-    (text.match(/@([0-9]{5,16})/)?.[1] + '@s.whatsapp.net')
+  const getUser = () => {
+    if (m.mentionedJid?.length) return m.mentionedJid[0]
+    if (m.quoted?.sender) return m.quoted.sender
+
+    let num = text.match(/\d{5,16}/)
+    if (num) return num[0] + '@s.whatsapp.net'
+
+    return null
+  }
+
+  const target = getUser()
+
+  // ================= LN =================
 
   if (command === 'ln') {
 
-    if (!mentioned || mentioned.includes('undefined'))
+    if (!target)
       return conn.reply(m.chat,
-        '🚫 Menciona o responde al usuario\n\nEjemplo:\n.ln @usuario motivo',
+        '🚫 Menciona, responde o escribe el número\n\nEjemplo:\n.ln @user motivo',
         m)
 
     let reason = text.replace(/@\d+/g, '').trim() || 'Sin motivo'
 
-    if (!users[mentioned]) users[mentioned] = {}
+    if (!users[target]) users[target] = {}
 
-    users[mentioned].blacklist = true
-    users[mentioned].blacklistReason = reason
-    users[mentioned].blacklistBy = m.sender
-    users[mentioned].blacklistTime = Date.now()
+    users[target].blacklist = true
+    users[target].blacklistReason = reason
+    users[target].blacklistBy = m.sender
+    users[target].blacklistTime = Date.now()
 
     await conn.sendMessage(m.chat, {
       text:
 `🚫 *USUARIO EN LISTA NEGRA*
 ━━━━━━━━━━━━━━━━━━━━
-👤 @${mentioned.split('@')[0]}
+👤 @${target.split('@')[0]}
 📝 ${reason}`,
-      mentions: [mentioned]
+      mentions: [target]
     })
   }
 
+  // ================= UNLN =================
+
   if (command === 'unln') {
 
-    if (!mentioned || mentioned.includes('undefined'))
-      return conn.reply(m.chat, '🚫 Menciona al usuario.', m)
+    if (!target)
+      return conn.reply(m.chat, '🚫 Menciona o responde al usuario.', m)
 
-    if (users[mentioned]) {
-      users[mentioned].blacklist = false
-    }
+    if (users[target]) users[target].blacklist = false
 
     await conn.sendMessage(m.chat, {
       text:
 `✅ *USUARIO LIBERADO*
 ━━━━━━━━━━━━━━━━━━━━
-👤 @${mentioned.split('@')[0]}`,
-      mentions: [mentioned]
+👤 @${target.split('@')[0]}`,
+      mentions: [target]
     })
   }
+
+  // ================= VER LISTA =================
 
   if (command === 'vln') {
 
@@ -70,12 +81,8 @@ let handler = async (m, { conn, text, command, isOwner }) => {
       mentions.push(jid)
     })
 
-    await conn.sendMessage(m.chat, {
-      text: txt,
-      mentions
-    })
+    await conn.sendMessage(m.chat, { text: txt, mentions })
   }
-
 }
 
 handler.help = ['ln @user motivo', 'unln @user', 'vln']
@@ -94,10 +101,14 @@ handler.all = async function (m) {
   if (!m.isGroup) return
 
   let user = global.db.data.users[m.sender]
-  if (!user) return
-  if (!user.blacklist) return
+  if (!user?.blacklist) return
 
   try {
+
+    let group = await this.groupMetadata(m.chat)
+    let bot = group.participants.find(p => p.id == this.user.id)
+
+    if (!bot?.admin) return
 
     await this.groupParticipantsUpdate(m.chat, [m.sender], 'remove')
 
@@ -116,6 +127,7 @@ handler.all = async function (m) {
 }
 
 
+
 // ================= AUTO KICK AL ENTRAR =================
 
 handler.before = async function (m) {
@@ -124,26 +136,29 @@ handler.before = async function (m) {
   if (!m.messageStubType) return
 
   const joinTypes = [27, 31, 32]
-
   if (!joinTypes.includes(m.messageStubType)) return
 
-  for (let user of m.messageStubParameters || []) {
+  for (let jid of m.messageStubParameters || []) {
 
-    let data = global.db.data.users[user]
-    if (!data) continue
-    if (!data.blacklist) continue
+    let data = global.db.data.users[jid]
+    if (!data?.blacklist) continue
 
     try {
 
-      await this.groupParticipantsUpdate(m.chat, [user], 'remove')
+      let group = await this.groupMetadata(m.chat)
+      let bot = group.participants.find(p => p.id == this.user.id)
+
+      if (!bot?.admin) return
+
+      await this.groupParticipantsUpdate(m.chat, [jid], 'remove')
 
       await this.sendMessage(m.chat, {
         text:
 `🚨 *USUARIO EN LISTA NEGRA*
 ━━━━━━━━━━━━━━━━━━━━
-👤 @${user.split('@')[0]}
+👤 @${jid.split('@')[0]}
 🚷 Expulsión inmediata`,
-        mentions: [user]
+        mentions: [jid]
       })
 
     } catch (e) {
