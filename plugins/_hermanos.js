@@ -55,6 +55,16 @@ let handler = async (m, { conn, command }) => {
     return `${dias} días`
   }
 
+  const fechaBonita = (ms) => {
+    if (!ms) return 'Desconocida'
+    const d = new Date(ms)
+    return d.toLocaleDateString('es-ES', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    })
+  }
+
   // ======================
   // 🤝 PROPUESTA HERMANO
   // ======================
@@ -106,7 +116,7 @@ let handler = async (m, { conn, command }) => {
     saveDB(db)
 
     return conn.reply(m.chat,
-      `🧬 *¡Hermandad confirmada!*\n\n${tag(sender)} 🤝 ${tag(proposer)}\nAhora son hermanos oficiales 💪`,
+      `🧬 *¡Hermandad confirmada!*\n\n${tag(sender)} 🤝 ${tag(proposer)}\n📅 Desde: ${fechaBonita(ahora)}\nAhora son hermanos oficiales 💪`,
       m, { mentions: [sender, proposer] })
   }
 
@@ -168,7 +178,7 @@ let handler = async (m, { conn, command }) => {
         bro.nivel = user.nivel
         saveDB(db)
         return conn.reply(m.chat,
-          `🫂 ${tag(sender)} abrazó a su hermano ${tag(user.hermano)}\n💪 Nivel de hermandad: ${user.nivel}`,
+          `🫂 ${tag(sender)} abrazó a ${tag(user.hermano)}\n💪 Nivel: ${user.nivel}`,
           m, { mentions: [sender, user.hermano] })
 
       case 'proteger':
@@ -176,13 +186,20 @@ let handler = async (m, { conn, command }) => {
         bro.nivel = user.nivel
         saveDB(db)
         return conn.reply(m.chat,
-          `🛡️ ${tag(sender)} protegió a ${tag(user.hermano)} como un verdadero hermano 🔥\nNivel: ${user.nivel}`,
+          `🛡️ ${tag(sender)} protegió a ${tag(user.hermano)} 🔥\n💪 Nivel: ${user.nivel}`,
           m, { mentions: [sender, user.hermano] })
 
       case 'relacionhermano':
-        const tiempoJuntos = tiempo(ahora - user.hermandadFecha)
+        const dias = user.hermandadFecha
+          ? Math.floor((Date.now() - user.hermandadFecha) / 86400000)
+          : 0
+
         return conn.reply(m.chat,
-          `🧬 *Hermandad*\n${tag(sender)} 🤝 ${tag(user.hermano)}\nTiempo: ${tiempoJuntos}\nNivel: ${user.nivel}`,
+          `🧬 *Hermandad*
+${tag(sender)} 🤝 ${tag(user.hermano)}
+🕒 Tiempo: ${dias} días
+📅 Desde: ${fechaBonita(user.hermandadFecha)}
+💪 Nivel: ${user.nivel}`,
           m, { mentions: [sender, user.hermano] })
     }
   }
@@ -198,14 +215,26 @@ let handler = async (m, { conn, command }) => {
 
     for (let id in db) {
       const user = db[id]
+
       if (user.hermano && id < user.hermano) {
-        texto += `🤝 ${tag(id)} 🧬 ${tag(user.hermano)}\n`
+
+        const dias = user.hermandadFecha
+          ? Math.floor((Date.now() - user.hermandadFecha) / 86400000)
+          : 0
+
+        texto += `🤝 ${tag(id)} 🧬 ${tag(user.hermano)}
+🕒 Tiempo: ${dias} días
+📅 Desde: ${fechaBonita(user.hermandadFecha)}
+💪 Nivel: ${user.nivel}
+
+`
         mentions.push(id, user.hermano)
       }
     }
 
-    if (!mentions.length) texto += '😹 No hay hermanos.'
-    return conn.reply(m.chat, texto, m, { mentions })
+    if (!mentions.length) texto += '😹 No hay hermanos activos.'
+
+    return conn.reply(m.chat, texto.trim(), m, { mentions })
   }
 
   // ======================
