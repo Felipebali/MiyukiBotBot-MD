@@ -35,7 +35,7 @@ global.shadow_xyzJadibts = true
 
 //*─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─⭒─ׄ─ׅ─ׄ─*
 
-global.botname = "𝙈𝙞𝙮𝙪𝙠𝙞𝘽𝙤𝙩-𝙈𝘿 🌸"
+global.botname = "FelixCat-Bot"
 global.textbot = "𝙼𝚒𝚢𝚞𝚔𝚒𝙱𝚘𝚝-𝙼𝙳 | © 𝙿𝚘𝚠𝚎𝚛𝚎𝚍 𝙱𝚢 𝙾𝚖𝚊𝚛𝙶𝚛𝚊𝚗𝚍𝚊"
 global.dev = "© Powered By OmarGranda"
 global.author = "Omar Granda"
