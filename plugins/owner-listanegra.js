@@ -1,4 +1,4 @@
-// 📂 propietario-listanegra.js — FELI 2026 — FIXED PRO 🔥
+// 📂 propietario-listanegra.js — FELI 2026 — ULTRA FIX 🔥
 
 import fs from 'fs'
 import path from 'path'
@@ -15,6 +15,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms))
 
 const normalizeJid = jid => {
   if (!jid) return null
+
   jid = jid.toString().replace(/^\+/, '')
 
   if (jid.endsWith('@s.whatsapp.net')) return jid
@@ -47,6 +48,18 @@ const isBotAdmin = async (conn, chat) => {
   }
 }
 
+// ================= OBTENER USUARIO =================
+
+const getUser = (m, text) => {
+
+  let target =
+    m.mentionedJid?.[0] ||
+    m.quoted?.sender ||
+    text?.match(/\d+/g)?.join('')
+
+  return normalizeJid(target)
+}
+
 // ================= HANDLER =================
 
 const handler = async (m, { conn, command, text }) => {
@@ -62,14 +75,14 @@ const handler = async (m, { conn, command, text }) => {
   // ================= LN =================
   if (command === 'ln') {
 
-    if (!m.mentionedJid?.length)
+    userJid = getUser(m, text)
+
+    if (!userJid)
       return conn.reply(
         m.chat,
-        '🚫 Debes mencionar al usuario.\n\nEjemplo:\n.ln @usuario motivo',
+        '🚫 Debes mencionar, responder o escribir el número.\n\nEjemplo:\n.ln @usuario motivo',
         m
       )
-
-    userJid = normalizeJid(m.mentionedJid[0])
 
     const reason =
       text?.replace(/@\d+/g, '').trim() || 'No especificado'
@@ -174,7 +187,9 @@ handler.all = async function (m) {
       mentions: [sender]
     })
 
-  } catch {}
+  } catch (e) {
+    console.log('AutoKick Error:', e)
+  }
 }
 
 // ================= AUTO KICK AL ENTRAR =================
@@ -199,7 +214,6 @@ handler.before = async function (m) {
       const jid = normalizeJid(user)
 
       if (!db[jid]?.banned) continue
-
       if (jid === normalizeJid(this.user.id)) continue
 
       await this.groupParticipantsUpdate(m.chat, [jid], 'remove')
@@ -212,7 +226,9 @@ handler.before = async function (m) {
       })
     }
 
-  } catch {}
+  } catch (e) {
+    console.log('JoinKick Error:', e)
+  }
 }
 
 // ================= CONFIG =================
