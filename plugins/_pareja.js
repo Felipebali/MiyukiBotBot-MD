@@ -75,6 +75,17 @@ let handler = async (m, { conn, command }) => {
   }
 
   // ======================
+  // Frases para solteros
+  // ======================
+  const frasesSoltero = [
+    '😿 Estás soltero/a, busca a alguien especial 💔',
+    '💔 Sin pareja aún, el amor llegará 😉',
+    '😹 Nadie para abrazar, pero siempre queda el chat 😏',
+    '💌 Tu corazón está libre, ¡aprovéchalo!'
+  ]
+  const fraseSoltero = () => frasesSoltero[Math.floor(Math.random() * frasesSoltero.length)]
+
+  // ======================
   // 💌 PROPUESTA
   // ======================
   if (command === 'pareja') {
@@ -144,13 +155,13 @@ let handler = async (m, { conn, command }) => {
   }
 
   // ======================
-  // ❌ TERMINAR RELACIÓN
+  // ❌ TERMINAR RELACIÓN (sin mencionar)
   // ======================
   if (command === 'terminar') {
     const user = getUser(sender)
-    if (!user.pareja) return m.reply('💔 No tienes pareja para terminar la relación 😢')
-
     const parejaId = user.pareja
+    if (!parejaId) return m.reply('💔 ' + fraseSoltero())
+
     const pareja = getUser(parejaId)
 
     user.pareja = null
@@ -170,36 +181,34 @@ let handler = async (m, { conn, command }) => {
   }
 
   // ======================
-  // 💍 CASARSE / DIVORCIAR
+  // 💍 CASARSE / DIVORCIAR (sin mencionar)
   // ======================
   if (command === 'casarse') {
     const user = getUser(sender)
-    const target = getTarget()
-    if (!target) return m.reply('💍 Menciona a la persona con la que quieres casarte.')
-    if (user.pareja !== target) return m.reply('❌ Solo puedes casarte con tu pareja actual.')
+    const parejaId = user.pareja
+    if (!parejaId) return m.reply('💍 ' + fraseSoltero())
     if (user.matrimonioFecha) return m.reply('💒 Ya estás casado/a.')
 
+    const pareja = getUser(parejaId)
     user.matrimonioFecha = ahora
-    const pareja = getUser(target)
     pareja.matrimonioFecha = ahora
     saveDB(db)
 
-    return conn.reply(m.chat, `💒 ¡Felicidades! ${tag(sender)} se casó con ${tag(target)} ❤️`, m, { mentions: [sender, target] })
+    return conn.reply(m.chat, `💒 ¡Felicidades! ${tag(sender)} se casó con ${tag(parejaId)} ❤️`, m, { mentions: [sender, parejaId] })
   }
 
   if (command === 'divorciar') {
     const user = getUser(sender)
-    const target = getTarget()
-    if (!target) return m.reply('💔 Menciona a la persona con la que quieres divorciarte.')
-    if (user.pareja !== target) return m.reply('❌ Solo puedes divorciarte de tu pareja actual.')
+    const parejaId = user.pareja
+    if (!parejaId) return m.reply('💔 ' + fraseSoltero())
     if (!user.matrimonioFecha) return m.reply('💒 No estás casado/a.')
 
+    const pareja = getUser(parejaId)
     user.matrimonioFecha = null
-    const pareja = getUser(target)
     pareja.matrimonioFecha = null
     saveDB(db)
 
-    return conn.reply(m.chat, `💔 ${tag(sender)} se divorció de ${tag(target)}`, m, { mentions: [sender, target] })
+    return conn.reply(m.chat, `💔 ${tag(sender)} se divorció de ${tag(parejaId)}`, m, { mentions: [sender, parejaId] })
   }
 
   // ======================
@@ -207,7 +216,7 @@ let handler = async (m, { conn, command }) => {
   // ======================
   if (['besar','abrazar','amor','relacion'].includes(command)) {
     const user = getUser(sender)
-    if (!user.pareja) return m.reply('💔 No tienes pareja 😢')
+    if (!user.pareja) return m.reply(fraseSoltero())
 
     const target = getTarget()
     const mensajeProtegido = validarInteraccion(target)
