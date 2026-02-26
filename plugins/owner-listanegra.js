@@ -1,4 +1,4 @@
-// 📂 propietario-listanegra.js — FELI 2026 — FINAL 🔥
+// 📂 propietario-listanegra.js — FELI 2026 — FIXED PRO 🔥
 
 import fs from 'fs'
 import path from 'path'
@@ -16,8 +16,10 @@ const sleep = ms => new Promise(r => setTimeout(r, ms))
 const normalizeJid = jid => {
   if (!jid) return null
   jid = jid.toString().replace(/^\+/, '')
+
   if (jid.endsWith('@s.whatsapp.net')) return jid
   if (jid.endsWith('@c.us')) return jid.replace('@c.us', '@s.whatsapp.net')
+
   const clean = jid.replace(/\D/g, '')
   return clean ? clean + '@s.whatsapp.net' : null
 }
@@ -39,7 +41,7 @@ const isBotAdmin = async (conn, chat) => {
     const bot = meta.participants.find(p =>
       normalizeJid(p.id) === normalizeJid(conn.user.id)
     )
-    return bot?.admin
+    return bot?.admin || false
   } catch {
     return false
   }
@@ -49,7 +51,7 @@ const isBotAdmin = async (conn, chat) => {
 
 const handler = async (m, { conn, command, text }) => {
 
-  const ICON = { ok: '✅', ban: '🚫', warn: '⚠️' }
+  const ICON = { ok: '✅', ban: '🚫' }
   const SEP = '━━━━━━━━━━━━━━━━━━━━'
 
   const db = readDB()
@@ -85,7 +87,6 @@ const handler = async (m, { conn, command, text }) => {
       text: `🚫 *AGREGADO A LISTA NEGRA*\n${SEP}\n👤 @${userJid.split('@')[0]}\n📝 ${reason}`,
       mentions: [userJid]
     })
-
   }
 
   // ================= UNLN =================
@@ -112,10 +113,9 @@ const handler = async (m, { conn, command, text }) => {
       text: `${ICON.ok} *USUARIO LIBERADO*\n${SEP}\n👤 @${userJid.split('@')[0]}`,
       mentions: [userJid]
     })
-
   }
 
-  // ================= LISTA =================
+  // ================= VER LISTA =================
   else if (command === 'vln') {
 
     if (!bannedList.length)
@@ -135,7 +135,6 @@ const handler = async (m, { conn, command, text }) => {
     msg += SEP
 
     await conn.sendMessage(m.chat, { text: msg, mentions })
-
   }
 
   // ================= LIMPIAR =================
@@ -154,16 +153,17 @@ const handler = async (m, { conn, command, text }) => {
 
 handler.all = async function (m) {
 
-  if (!m.isGroup) return
-
-  const db = readDB()
-  const sender = normalizeJid(m.sender)
-
-  if (!db[sender]?.banned) return
-
-  if (!(await isBotAdmin(this, m.chat))) return
-
   try {
+
+    if (!m.isGroup) return
+
+    const db = readDB()
+    const sender = normalizeJid(m.sender)
+
+    if (!db[sender]?.banned) return
+    if (sender === normalizeJid(this.user.id)) return
+
+    if (!(await isBotAdmin(this, m.chat))) return
 
     await this.groupParticipantsUpdate(m.chat, [sender], 'remove')
 
@@ -181,24 +181,26 @@ handler.all = async function (m) {
 
 handler.before = async function (m) {
 
-  if (!m.isGroup) return
-  if (!m.messageStubType) return
+  try {
 
-  const joinTypes = [27, 31, 32]
+    if (!m.isGroup) return
+    if (!m.messageStubType) return
 
-  if (!joinTypes.includes(m.messageStubType)) return
+    const joinTypes = [27, 31, 32]
 
-  const db = readDB()
+    if (!joinTypes.includes(m.messageStubType)) return
 
-  if (!(await isBotAdmin(this, m.chat))) return
+    const db = readDB()
 
-  for (const user of m.messageStubParameters || []) {
+    if (!(await isBotAdmin(this, m.chat))) return
 
-    const jid = normalizeJid(user)
+    for (const user of m.messageStubParameters || []) {
 
-    if (!db[jid]?.banned) continue
+      const jid = normalizeJid(user)
 
-    try {
+      if (!db[jid]?.banned) continue
+
+      if (jid === normalizeJid(this.user.id)) continue
 
       await this.groupParticipantsUpdate(m.chat, [jid], 'remove')
 
@@ -208,14 +210,14 @@ handler.before = async function (m) {
         text: `🚨 *USUARIO EN LISTA NEGRA*\n━━━━━━━━━━━━━━━━━━━━\n👤 @${jid.split('@')[0]}\n🚷 Expulsión inmediata`,
         mentions: [jid]
       })
+    }
 
-    } catch {}
-  }
+  } catch {}
 }
 
 // ================= CONFIG =================
 
-handler.help = ['ln @usuario', 'unln <número>', 'vln', 'clrn']
+handler.help = ['ln @usuario', 'unln <numero>', 'vln', 'clrn']
 handler.tags = ['owner']
 handler.command = ['ln', 'unln', 'vln', 'clrn']
 handler.rowner = true
