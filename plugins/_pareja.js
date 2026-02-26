@@ -11,7 +11,6 @@ if (!fs.existsSync(file)) fs.writeFileSync(file, JSON.stringify({}, null, 2))
 const loadDB = () => JSON.parse(fs.readFileSync(file))
 const saveDB = (data) => fs.writeFileSync(file, JSON.stringify(data, null, 2))
 
-// 🧠 Sistema universal de owners
 function getOwnersJid() {
   return (global.owner || [])
     .map(v => {
@@ -26,7 +25,6 @@ let handler = async (m, { conn, command }) => {
   const db = loadDB()
   const sender = conn.decodeJid(m.sender)
   const ahora = Date.now()
-  const ownersJid = getOwnersJid()
 
   const getUser = (id) => {
     if (!db[id]) {
@@ -45,32 +43,35 @@ let handler = async (m, { conn, command }) => {
 
   const getTarget = () => {
     if (m.mentionedJid?.length) return m.mentionedJid[0]
-    if (m.quoted?.sender) return m.quoted.sender
+    if (m.quoted?.sender) return conn.decodeJid(m.quoted.sender)
     return null
   }
 
-  const tag = (id) => '@' + id.split('@')[0]
+  // 🔥 NUEVA FUNCIÓN TAG (muestra nombre real)
+  const tag = (id) => {
+    try {
+      return `@${conn.getName(id)}`
+    } catch {
+      return `@${id.split('@')[0]}`
+    }
+  }
 
   const tiempo = (ms) => {
     const dias = Math.floor(ms / 86400000)
     return `${dias} días`
   }
 
-  // ======================
-  // Frases para solteros
-  // ======================
   const frasesSoltero = [
     '😿 Estás soltero/a, busca a alguien especial 💔',
     '💔 Sin pareja aún, el amor llegará 😉',
     '😹 Nadie para abrazar, pero siempre queda el chat 😏',
     '💌 Tu corazón está libre, ¡aprovéchalo!'
   ]
+
   const fraseSoltero = () =>
     frasesSoltero[Math.floor(Math.random() * frasesSoltero.length)]
 
-  // ======================
   // 💌 PROPUESTA
-  // ======================
   if (command === 'pareja') {
     const target = getTarget()
     if (!target) return m.reply('💌 Menciona o responde al mensaje.')
@@ -80,9 +81,10 @@ let handler = async (m, { conn, command }) => {
     const tu = getUser(target)
 
     if (user.estado !== 'soltero')
-      return m.reply(`😡 Ya tienes pareja con ${tag(user.pareja)}`)
+      return m.reply(`😡 Ya tienes pareja con ${tag(user.pareja)}`, null, { mentions: [user.pareja] })
+
     if (tu.estado !== 'soltero')
-      return m.reply(`😳 ${tag(target)} ya tiene pareja con ${tag(tu.pareja)}`)
+      return m.reply(`😳 ${tag(target)} ya tiene pareja con ${tag(tu.pareja)}`, null, { mentions: [target, tu.pareja] })
 
     tu.propuesta = sender
     tu.propuestaFecha = ahora
@@ -96,9 +98,7 @@ let handler = async (m, { conn, command }) => {
     )
   }
 
-  // ======================
   // ✅ ACEPTAR
-  // ======================
   if (command === 'aceptar') {
     const user = getUser(sender)
     if (!user.propuesta) return m.reply('💭 No tienes propuestas.')
@@ -130,9 +130,7 @@ let handler = async (m, { conn, command }) => {
     )
   }
 
-  // ======================
-  // 💍 CASARSE (requiere 7 días)
-  // ======================
+  // 💍 CASARSE
   if (command === 'casarse') {
     const user = getUser(sender)
     const parejaId = user.pareja
@@ -158,16 +156,13 @@ let handler = async (m, { conn, command }) => {
 
     return conn.reply(
       m.chat,
-      `💒 ¡Felicidades!\n\n${tag(sender)} 💍 ${tag(parejaId)}\n` +
-      `Después de ${diasRelacion} días juntos ❤️`,
+      `💒 ¡Felicidades!\n\n${tag(sender)} 💍 ${tag(parejaId)}\nDespués de ${diasRelacion} días juntos ❤️`,
       m,
       { mentions: [sender, parejaId] }
     )
   }
 
-  // ======================
-  // 💑 RELACION INFO
-  // ======================
+  // 💑 RELACIÓN
   if (command === 'relacion') {
     const user = getUser(sender)
     if (!user.pareja) return m.reply(fraseSoltero())
