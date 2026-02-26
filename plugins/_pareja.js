@@ -1,4 +1,4 @@
-// 🔹 handler amoroso con protección de parejas y control de owners
+// 🔹 handler amoroso completo — FELI 2026
 import fs from 'fs'
 import path from 'path'
 
@@ -23,7 +23,6 @@ function getOwnersJid() {
 }
 
 let handler = async (m, { conn, command }) => {
-
   const db = loadDB()
   const sender = conn.decodeJid(m.sender)
   const ahora = Date.now()
@@ -111,7 +110,6 @@ let handler = async (m, { conn, command }) => {
     const proposer = user.propuesta
     const proposerUser = getUser(proposer)
 
-    // Validar tiempo de propuesta (24h)
     if (user.propuestaFecha && ahora - user.propuestaFecha > 86400000) {
       user.propuesta = null
       saveDB(db)
@@ -146,7 +144,66 @@ let handler = async (m, { conn, command }) => {
   }
 
   // ======================
-  // 💋 / 🤗 / ❤️ / 📊
+  // ❌ TERMINAR RELACIÓN
+  // ======================
+  if (command === 'terminar') {
+    const user = getUser(sender)
+    if (!user.pareja) return m.reply('💔 No tienes pareja para terminar la relación 😢')
+
+    const parejaId = user.pareja
+    const pareja = getUser(parejaId)
+
+    user.pareja = null
+    user.estado = 'soltero'
+    user.relacionFecha = null
+    user.matrimonioFecha = null
+    user.amor = 0
+
+    pareja.pareja = null
+    pareja.estado = 'soltero'
+    pareja.relacionFecha = null
+    pareja.matrimonioFecha = null
+    pareja.amor = 0
+
+    saveDB(db)
+    return conn.reply(m.chat, `💔 ${tag(sender)} terminó la relación con ${tag(parejaId)}`, m, { mentions: [sender, parejaId] })
+  }
+
+  // ======================
+  // 💍 CASARSE / DIVORCIAR
+  // ======================
+  if (command === 'casarse') {
+    const user = getUser(sender)
+    const target = getTarget()
+    if (!target) return m.reply('💍 Menciona a la persona con la que quieres casarte.')
+    if (user.pareja !== target) return m.reply('❌ Solo puedes casarte con tu pareja actual.')
+    if (user.matrimonioFecha) return m.reply('💒 Ya estás casado/a.')
+
+    user.matrimonioFecha = ahora
+    const pareja = getUser(target)
+    pareja.matrimonioFecha = ahora
+    saveDB(db)
+
+    return conn.reply(m.chat, `💒 ¡Felicidades! ${tag(sender)} se casó con ${tag(target)} ❤️`, m, { mentions: [sender, target] })
+  }
+
+  if (command === 'divorciar') {
+    const user = getUser(sender)
+    const target = getTarget()
+    if (!target) return m.reply('💔 Menciona a la persona con la que quieres divorciarte.')
+    if (user.pareja !== target) return m.reply('❌ Solo puedes divorciarte de tu pareja actual.')
+    if (!user.matrimonioFecha) return m.reply('💒 No estás casado/a.')
+
+    user.matrimonioFecha = null
+    const pareja = getUser(target)
+    pareja.matrimonioFecha = null
+    saveDB(db)
+
+    return conn.reply(m.chat, `💔 ${tag(sender)} se divorció de ${tag(target)}`, m, { mentions: [sender, target] })
+  }
+
+  // ======================
+  // 💋 / 🤗 / ❤️ / 📊 Interacciones
   // ======================
   if (['besar','abrazar','amor','relacion'].includes(command)) {
     const user = getUser(sender)
