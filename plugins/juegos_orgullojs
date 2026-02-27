@@ -1,62 +1,74 @@
-// 📂 plugins/orgullo.js — FelixCat-Bot 🏳️‍🌈
-console.log('[Plugin] orgullo cargado');
-
-let handler = async (m, { conn }) => {
+// 📂 plugins/gay.js — FelixCat_Bot 🏳️‍🌈
+let handler = async (m, { conn, command }) => {
   try {
     const chatData = global.db.data.chats[m.chat] || {};
-    if (!chatData.games) return;
 
-    if (!m.isGroup) 
-      return conn.sendMessage(m.chat, { text: '❌ Este comando solo funciona en grupos.' });
+    // ⚠️ Verificar si los juegos están activados
+    if (!chatData.games) {
+      return await conn.sendMessage(
+        m.chat,
+        { text: '🎮 *Los mini-juegos están desactivados.*\nActívalos con *.juegos* 🔓' },
+        { quoted: m }
+      );
+    }
 
-    // 🎯 Detectar objetivo
+    if (!m.isGroup) return m.reply('❌ Este comando solo funciona en grupos.');
+
+    // 🎯 Determinar objetivo (citado > mencionado > autor)
     let who = m.quoted
       ? m.quoted.sender
       : (m.mentionedJid && m.mentionedJid[0]) || m.sender;
 
     let simpleId = who.split("@")[0];
 
-    // 🎰 Nivel random de energía arcoíris
+    // 🎲 Porcentaje aleatorio
     let porcentaje = Math.floor(Math.random() * 101);
 
+    // 📊 Barra visual
     const totalBars = 10;
     const filledBars = Math.round(porcentaje / 10);
-    const bar = '🌈'.repeat(filledBars) + '⬜'.repeat(totalBars - filledBars);
+    const bar = '🏳️‍🌈'.repeat(filledBars) + '⬜'.repeat(totalBars - filledBars);
 
-    let frase;
-    if (porcentaje >= 90) frase = '✨ Energía legendaria, brillás con luz propia.';
-    else if (porcentaje >= 70) frase = '🌟 Tenés un aura colorida y poderosa.';
-    else if (porcentaje >= 50) frase = '🎉 Buena vibra y estilo único.';
-    else if (porcentaje >= 30) frase = '😎 Tranqui, pero con chispa.';
-    else frase = '🗿 Energía neutral, modo zen activado.';
+    // 💬 Frases por nivel
+    let frases = [
+      "✨ Brillás con energía propia.",
+      "🌈 Tenés un aura colorida y poderosa.",
+      "🎉 Nivel fiesta activado.",
+      "😎 Tranquilo pero con estilo.",
+      "🦄 Energía única e irrepetible.",
+      "🔥 FelixCat detecta vibra especial."
+    ];
 
+    const frase = frases[Math.floor(Math.random() * frases.length)];
+
+    // 🧾 Mensaje final
     let msg = `
-🌈 *TEST DE ENERGÍA 2.1* 🌈
+🏳️‍🌈 *TEST GAY FELIXCAT 2.1* 🏳️‍🌈
 
-👤 Usuario: @${simpleId}
-📊 Nivel de energía: ${porcentaje}%
+👤 *Usuario:* @${simpleId}
+📊 *Nivel detectado:* ${porcentaje}%
 
 ${bar}
 
 💬 ${frase}
 `.trim();
 
+    // 📤 Enviar mensaje con mención clickeable
     await conn.sendMessage(
       m.chat,
       { text: msg, mentions: [who] },
       { quoted: m }
     );
 
-  } catch (err) {
-    console.error(err);
-    await conn.sendMessage(m.chat, { text: '❌ Error ejecutando el comando.' });
+  } catch (e) {
+    console.error(e);
+    await conn.reply(m.chat, '✖️ Error al ejecutar el test.', m);
   }
 };
 
-handler.help = ['orgullo'];
+handler.command = ['gay'];
 handler.tags = ['fun', 'juego'];
+handler.help = ['gay <@usuario>'];
 handler.group = true;
-handler.command = ['orgullo'];
-handler.register = true;
 
 export default handler;
