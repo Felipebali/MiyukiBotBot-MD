@@ -39,7 +39,7 @@ let handler = async (m, { conn, command }) => {
     else frase = '🗿 Santo/a puro/a, ni un pensamiento indecente.';
 
     // 🔥 Título según comando
-    const titulo = command.toLowerCase() === 'zorra'
+    const titulo = /zorra/i.test(command)
       ? '💃 *TEST DE ZORRA 2.1* 💄'
       : '🦊 *TEST DE ZORRO 2.1* 😏';
 
@@ -67,6 +67,9 @@ ${bar}
 handler.help = ['zorra', 'zorro'];
 handler.tags = ['fun', 'juego'];
 handler.group = true;
-handler.command = ['zorra', 'zorro']; // array que funciona en cualquier loader
+
+// ✅ Array para menú y regex para ejecución segura
+handler.command = ['zorra', 'zorro'];       // menú
+handler.command = /^(zorra|zorro)$/i;       // ejecución por loader
 
 export default handler;
