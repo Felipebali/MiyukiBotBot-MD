@@ -254,7 +254,7 @@ A veces los corazones necesitan más tiempo 💌`),
 `${tag(sender)} se ha divorciado.
 
 Siguen siendo novios, pero el corazón ha cambiado 💌`),
-      m, { mentions: [sender] })
+      m, { mentions: [sender, pareja] })
   }
 
   /* 💕 INTERACCIONES */
@@ -278,7 +278,7 @@ Nuevo nivel de amor: ${user.amor} ❤️`),
     )
   }
 
-  /* 👑 LISTA DE PAREJAS */
+  /* 👑 LISTA DE PAREJAS DETALLADA */
   if (command === 'listapareja') {
     if (!ownersJid.includes(sender)) return m.reply('❌ Solo el dueño puede usar esto.')
 
@@ -288,8 +288,14 @@ Nuevo nivel de amor: ${user.amor} ❤️`),
     for (let id in db) {
       const user = db[id]
       if (user.pareja && id < user.pareja) {
+        const parejaUser = db[user.pareja]
         const estado = user.matrimonioFecha ? '💍 Casados' : '💑 Novios'
-        texto += `💖 ${tag(id)} ❤️ ${tag(user.pareja)} — ${estado}\n`
+        const tiempoJuntos = user.relacionFecha ? tiempo(ahora - user.relacionFecha) : '0 días'
+        texto += `💖 ${tag(id)} ❤️ ${tag(user.pareja)}
+Estado: ${estado}
+Tiempo juntos: ${tiempoJuntos}
+Nivel de amor: ${user.amor} ❤️
+─────────────\n`
         mentions.push(id, user.pareja)
       }
     }
