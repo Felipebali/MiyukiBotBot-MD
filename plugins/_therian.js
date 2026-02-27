@@ -1,6 +1,5 @@
 // 📂 plugins/therians_pro_save.js — FelixCat_Bot 🐾 PRO Master + Owners Especiales
 import fs from 'fs'
-import path from 'path'
 
 const FILE = './database/therians.json'
 
@@ -30,21 +29,17 @@ let handler = async (m, { conn }) => {
   try {
     const chatData = global.db.data.chats[m.chat] || {}
 
-    if (!chatData.games) {
-      return await conn.sendMessage(
-        m.chat,
-        { text: '🎮 *Los mini-juegos están desactivados.*\nActívalos con *.juegos* 🔓' },
-        { quoted: m }
-      )
-    }
+    if (!chatData.games) return conn.sendMessage(
+      m.chat,
+      { text: '🎮 *Los mini-juegos están desactivados.*\nActívalos con *.juegos* 🔓' },
+      { quoted: m }
+    )
 
     if (!m.isGroup) return m.reply('❌ Este comando solo funciona en grupos.')
 
-    let who = m.quoted ? m.quoted.sender : (m.mentionedJid && m.mentionedJid[0]) || m.sender
-    let simpleId = who.split('@')[0]
-    let name = conn.getName ? conn.getName(who) : simpleId
+    const who = m.quoted?.sender || m.mentionedJid?.[0] || m.sender
+    const simpleId = who.split('@')[0]
 
-    // =================== ANIMALES ===================
     const normalTypes = [
       '🐺 Lobo','🦊 Zorro','🐱 Gato','🐺 Hombre-Lobo','🦁 León',
       '🐉 Dragón','🦄 Unicornio','🐲 Dragón Asiático','🦅 Águila Mística',
@@ -57,8 +52,10 @@ let handler = async (m, { conn }) => {
     ]
 
     const ownersJid = getOwnersJid()
-    // ✅ Si es owner: puede salir con especiales; si no: solo normales
-    const allTypes = ownersJid.includes(who) ? [...normalTypes, ...specialTypes] : normalTypes
+    const isOwner = ownersJid.includes(who) // ✅ Chequeo seguro
+
+    // ✅ Solo owners pueden sacar especiales
+    const allTypes = isOwner ? [...normalTypes, ...specialTypes] : normalTypes
 
     const attributes = ['Animal','Espíritu','Poder','Agilidad','Magia']
     const totalBars = 10
@@ -84,7 +81,7 @@ let handler = async (m, { conn }) => {
       attrResult[attrName] = { pct, bar: sym.repeat(filled)+'⬜'.repeat(totalBars-filled) }
     })
 
-    // =================== FRASES ÉPICAS ===================
+    // =================== FRASES ===================
     const frasesComunes = [
       "🌙 Tu espíritu animal domina la noche.",
       "🔥 Peligroso y adorable, equilibrio perfecto.",
@@ -96,7 +93,6 @@ let handler = async (m, { conn }) => {
       "🌀 FelixCat confirma: alma de criatura legendaria."
     ]
 
-    // Frases especiales por animal
     const frasesEspeciales = {
       '🕊️ Paloma Migajera': [
         "💌 Migajeando en el amor sin parar 🕊️",
@@ -120,9 +116,9 @@ let handler = async (m, { conn }) => {
       ]
     }
 
-    // ✅ Combinar frases según usuario
     let frases = [...frasesComunes]
-    if (ownersJid.includes(who) && specialTypes.includes(selectedType)) {
+    // ✅ Solo si es owner y es un animal especial
+    if (isOwner && specialTypes.includes(selectedType)) {
       frases = frases.concat(frasesEspeciales[selectedType])
     }
 
@@ -151,11 +147,9 @@ let handler = async (m, { conn }) => {
 
     msg += `\n💬 ${frase}`
 
-    // 📤 Guardar en therians.json
     db[who].lastResult = { type: selectedType, attributes: attrResult, promedio, categoria, frase }
     saveJson(FILE, db)
 
-    // 📤 Enviar mensaje
     await conn.sendMessage(m.chat, { text: msg, mentions: [who] }, { quoted: m })
 
   } catch (e) {
