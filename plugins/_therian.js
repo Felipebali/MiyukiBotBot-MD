@@ -1,4 +1,4 @@
-// 📂 plugins/therians_pro_save.js — FelixCat_Bot 🐾 PRO Master + Persistencia
+// 📂 plugins/therians_pro_save.js — FelixCat_Bot 🐾 PRO Master + Paloma Migajera
 import fs from 'fs'
 import path from 'path'
 
@@ -33,11 +33,12 @@ let handler = async (m, { conn, command }) => {
     let simpleId = who.split('@')[0]
     let name = conn.getName ? conn.getName(who) : simpleId
 
-    // 🐾 Tipos de Therians PRO
+    // 🐾 Tipos de Therians PRO (máximo 15, incluyendo chistoso)
     let allTypes = [
       '🐺 Lobo','🦊 Zorro','🐱 Gato','🐺 Hombre-Lobo','🦁 León',
       '🐉 Dragón','🦄 Unicornio','🐲 Dragón Asiático','🦅 Águila Mística',
-      '🦖 T-Rex Fantástico','🦌 Ciervo Lunar','🐉 Fénix','🦁 León Fantástico'
+      '🦖 T-Rex Fantástico','🦌 Ciervo Lunar','🐉 Fénix','🦁 León Fantástico',
+      '🕊️ Paloma Migajera','🦝 Mapache Travieso'
     ]
 
     const attributes = ['Animal','Espíritu','Poder','Agilidad','Magia']
@@ -48,11 +49,10 @@ let handler = async (m, { conn, command }) => {
     const db = loadJson(FILE)
     if (!db[who]) db[who] = { usedTypes: [] }
 
-    // 🐾 Seleccionar un animal que no se haya usado
-    const availableTypes = allTypes.filter(t => !db[who].usedTypes.includes(t))
-    if (availableTypes.length === 0) {
-      db[who].usedTypes = [] // resetear si ya usó todos
-    }
+    // 🐾 Seleccionar un animal único
+    let availableTypes = allTypes.filter(t => !db[who].usedTypes.includes(t))
+    if (availableTypes.length === 0) db[who].usedTypes = [] // reset si ya usó todos
+    availableTypes = allTypes.filter(t => !db[who].usedTypes.includes(t))
     const selectedType = availableTypes[Math.floor(Math.random()*availableTypes.length)]
     db[who].usedTypes.push(selectedType)
 
@@ -74,7 +74,8 @@ let handler = async (m, { conn, command }) => {
       "🛡️ Protector de tu manada, valiente y noble.",
       "⚡ Poder extremo: cuidado con tus enemigos.",
       "🌟 Aura mágica que brilla más que la luna llena.",
-      "🌀 FelixCat confirma: alma de criatura legendaria."
+      "🌀 FelixCat confirma: alma de criatura legendaria.",
+      "😹 Incluso la Paloma Migajera tiene estilo único 🕊️"
     ]
     const frase = frases[Math.floor(Math.random()*frases.length)]
 
