@@ -1,0 +1,62 @@
+// 📂 plugins/orgullo.js — FelixCat-Bot 🏳️‍🌈
+console.log('[Plugin] orgullo cargado');
+
+let handler = async (m, { conn }) => {
+  try {
+    const chatData = global.db.data.chats[m.chat] || {};
+    if (!chatData.games) return;
+
+    if (!m.isGroup) 
+      return conn.sendMessage(m.chat, { text: '❌ Este comando solo funciona en grupos.' });
+
+    // 🎯 Detectar objetivo
+    let who = m.quoted
+      ? m.quoted.sender
+      : (m.mentionedJid && m.mentionedJid[0]) || m.sender;
+
+    let simpleId = who.split("@")[0];
+
+    // 🎰 Nivel random de energía arcoíris
+    let porcentaje = Math.floor(Math.random() * 101);
+
+    const totalBars = 10;
+    const filledBars = Math.round(porcentaje / 10);
+    const bar = '🌈'.repeat(filledBars) + '⬜'.repeat(totalBars - filledBars);
+
+    let frase;
+    if (porcentaje >= 90) frase = '✨ Energía legendaria, brillás con luz propia.';
+    else if (porcentaje >= 70) frase = '🌟 Tenés un aura colorida y poderosa.';
+    else if (porcentaje >= 50) frase = '🎉 Buena vibra y estilo único.';
+    else if (porcentaje >= 30) frase = '😎 Tranqui, pero con chispa.';
+    else frase = '🗿 Energía neutral, modo zen activado.';
+
+    let msg = `
+🌈 *TEST DE ENERGÍA 2.1* 🌈
+
+👤 Usuario: @${simpleId}
+📊 Nivel de energía: ${porcentaje}%
+
+${bar}
+
+💬 ${frase}
+`.trim();
+
+    await conn.sendMessage(
+      m.chat,
+      { text: msg, mentions: [who] },
+      { quoted: m }
+    );
+
+  } catch (err) {
+    console.error(err);
+    await conn.sendMessage(m.chat, { text: '❌ Error ejecutando el comando.' });
+  }
+};
+
+handler.help = ['orgullo'];
+handler.tags = ['fun', 'juego'];
+handler.group = true;
+handler.command = ['orgullo'];
+handler.register = true;
+
+export default handler;
