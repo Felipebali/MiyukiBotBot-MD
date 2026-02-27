@@ -143,7 +143,7 @@ const handler = async (m, { conn, text, mentionedJid }) => {
 
 // ================= FLAGS =================
 
-handler.command = ['resetabsoluto', 'resettotal', 'resetuser', 'borrardatos']
+handler.command = ['resetabsoluto', 're', 'resetuser', 'borrardatos']
 handler.rowner = true
 handler.tags = ['owner']
 
