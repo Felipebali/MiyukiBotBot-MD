@@ -1,4 +1,4 @@
-// 📂 plugins/therians_pro_save.js — FelixCat_Bot 🐾 PRO Master + Owners Especial Dinámico
+// 📂 plugins/therians_pro_save.js — FelixCat_Bot 🐾 PRO Master + Owners Especiales
 import fs from 'fs'
 import path from 'path'
 
@@ -14,7 +14,7 @@ function saveJson(file, data) {
   fs.writeFileSync(file, JSON.stringify(data, null, 2))
 }
 
-// 🧠 Obtener JIDs de owners de manera universal (igual que aprovar.js)
+// 🧠 Obtener JIDs de owners de manera universal
 function getOwnersJid() {
   return (global.owner || [])
     .map(v => {
@@ -26,7 +26,7 @@ function getOwnersJid() {
 }
 
 // =================== HANDLER ===================
-let handler = async (m, { conn, command }) => {
+let handler = async (m, { conn }) => {
   try {
     const chatData = global.db.data.chats[m.chat] || {}
 
@@ -45,18 +45,17 @@ let handler = async (m, { conn, command }) => {
     let name = conn.getName ? conn.getName(who) : simpleId
 
     // =================== ANIMALES ===================
-    let normalTypes = [
+    const normalTypes = [
       '🐺 Lobo','🦊 Zorro','🐱 Gato','🐺 Hombre-Lobo','🦁 León',
       '🐉 Dragón','🦄 Unicornio','🐲 Dragón Asiático','🦅 Águila Mística',
       '🦖 T-Rex Fantástico','🦌 Ciervo Lunar','🐉 Fénix','🦁 León Fantástico',
       '🦝 Mapache Travieso'
     ]
 
-    let specialTypes = [
+    const specialTypes = [
       '🕊️ Paloma Migajera','🐉 Dragón Legendario','🦄 Unicornio Arcano','🐾 Fénix Épico'
     ]
 
-    // =================== DEFINIR LISTA SEGÚN USUARIO ===================
     const ownersJid = getOwnersJid()
     const allTypes = ownersJid.includes(who) ? [...normalTypes, ...specialTypes] : normalTypes
 
@@ -84,11 +83,11 @@ let handler = async (m, { conn, command }) => {
       attrResult[attrName] = { pct, bar: sym.repeat(filled)+'⬜'.repeat(totalBars-filled) }
     })
 
-    // 💬 Frases épicas
-    let frases = [
+    // =================== FRASES ÉPICAS ===================
+    const frasesComunes = [
       "🌙 Tu espíritu animal domina la noche.",
       "🔥 Peligroso y adorable, equilibrio perfecto.",
-      "💨 Sigiloso, nadie te ve acercarte.",
+      "💨 Sigiloso, nadie te ve acercarse.",
       "💖 Tu Therians interior es puro amor salvaje.",
       "🛡️ Protector de tu manada, valiente y noble.",
       "⚡ Poder extremo: cuidado con tus enemigos.",
@@ -96,19 +95,41 @@ let handler = async (m, { conn, command }) => {
       "🌀 FelixCat confirma: alma de criatura legendaria."
     ]
 
-    // 🐦 Frases especiales para owners
-    if (ownersJid.includes(who)) {
-      frases = frases.concat([
-        "💔 El Dragón Legendario también sabe de desamor 🐉",
-        "🕊️ Paloma Migajera trae chisme y estilo único 🕊️",
-        "🔥 Unicornio Arcano: puro poder y corazón roto 🦄",
-        "💖 Fénix Épico: renace incluso después del amor perdido"
-      ])
+    // Frases por animal
+    const frasesPorAnimal = {
+      '🕊️ Paloma Migajera': [
+        "💌 Migajeando en el amor sin parar 🕊️",
+        "😏 Paloma Migajera: chismes y corazones rotos",
+        "💔 Incluso el amor más dulce termina en migajas"
+      ],
+      '🐉 Dragón Legendario': [
+        "🔥 Dragón Legendario: fuerza y corazón ardiente 🐉",
+        "💔 Hasta un dragón puede sufrir desamor",
+        "⚡ Dominio total del fuego y la pasión"
+      ],
+      '🦄 Unicornio Arcano': [
+        "✨ Unicornio Arcano: magia pura y secretos de amor 🦄",
+        "💖 Corazón de unicornio roto, pero mágico",
+        "🌈 Pura fantasía en cada paso"
+      ],
+      '🐾 Fénix Épico': [
+        "🔥 Fénix Épico: renace después de cada amor perdido",
+        "💔 Las cenizas del desamor no te detienen",
+        "🌟 Resurge más fuerte y brillante que nunca"
+      ]
+    }
+
+    // Combinar frases
+    let frases = frasesComunes
+    if (ownersJid.includes(who) && frasesPorAnimal[selectedType]) {
+      frases = frases.concat(frasesPorAnimal[selectedType])
+    } else if (frasesPorAnimal[selectedType]) {
+      frases = frases.concat(frasesPorAnimal[selectedType])
     }
 
     const frase = frases[Math.floor(Math.random()*frases.length)]
 
-    // 🏆 Clasificación PRO
+    // =================== CLASIFICACIÓN ===================
     const promedio = Math.floor(attributes.reduce((a, attr) => a + attrResult[attr].pct,0)/attributes.length)
     let categoria = 'Común'
     if (promedio >= 90) categoria = '✨ Legendario Supremo ✨'
@@ -116,7 +137,7 @@ let handler = async (m, { conn, command }) => {
     else if (promedio >= 60) categoria = 'Raro 🌀'
     else if (promedio >= 40) categoria = 'Inusual 🌟'
 
-    // 🧾 Mensaje final
+    // =================== MENSAJE FINAL ===================
     let msg = `🐾 *THERIANS PRO MASTER 100%* 🐾
 
 👤 *Usuario:* @${simpleId}
