@@ -142,7 +142,6 @@ let handler = async (m, { conn }) => {
 
 ┏━━━ 👑 *OWNERS* ━━━┓
 ┃ 🛡️ *.autoadmin*
-┃ 🎯 *.chetar* / *.deschetar*
 ┃ 🕵️ *.detectar*
 ┃ 🔗 *.join*
 ┃ 📜 *.grouplist*
@@ -150,7 +149,6 @@ let handler = async (m, { conn }) => {
 ┃ ✏️ *.setprefix*
 ┃ 🧹 *.resetprefix*
 ┃ 🔁 *.restart*
-┃ 💣 *.wipe*
 ┃ 🪄 *.resetlink*
 ┃ ⚙️ *.update*
 ┗━━━━━━━━━━━━━━━━━━━━━┛
