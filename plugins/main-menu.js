@@ -48,10 +48,12 @@ let handler = async (m, { conn }) => {
 
 ┏━━━ 💕 *RELACIONES* ━━━┓
 ┃ 💘 *.pareja citando mensaje* – Proponer relación
-┃ ✅ *.aceptar* – Aceptar propuesta
-┃ ❌ *.rechazar* – Rechazar propuesta
+┃ ✅ *.aceptar* – Aceptar propuesta de pareja
+┃ ❌ *.rechazar* – Rechazar propuesta de pareja
 ┃ 💔 *.terminar* – Terminar relación
-┃ 💍 *.casarse* – Casarse (tras 7 días)
+┃ 💍 *.casarse* – Proponer matrimonio
+┃ ✅ *.si* – Aceptar propuesta de matrimonio
+┃ ❌ *.no* – Rechazar propuesta de matrimonio
 ┃ ⚖️ *.divorcio* – Divorciarse
 ┃ ❤️ *.relacion* – Ver estado actual
 ┃ 💋 *.besar* – Besar a tu pareja
