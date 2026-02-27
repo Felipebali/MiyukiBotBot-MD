@@ -704,8 +704,8 @@ if (m.sender && (user = global.db.data.users[m.sender])) {
 user.exp += m.exp
 user.coin -= m.coin * 1
 }
-        
-stats = global.db?.data?.stats || {}
+
+let stat
 if (m.plugin) {
 let now = +new Date
 if (m.plugin in stats) {
@@ -719,7 +719,7 @@ stat.last = now
 if (!isNumber(stat.lastSuccess))
 stat.lastSuccess = m.error != null ? 0 : now
 } else
-let stat = stats[m.plugin] = {
+stat = stats[m.plugin] = {
 total: 1,
 success: m.error != null ? 0 : 1,
 last: now,
