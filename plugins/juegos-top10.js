@@ -1,20 +1,18 @@
 // 📂 plugins/top10.js — FULL COMPATIBLE CON CUALQUIER LOADER
 console.log('[Plugin] top10 cargado');
 
-let handler = async (m, { conn, command, args }) => {
+let handler = async (m, { conn, command }) => {
   try {
     const chatData = global.db.data.chats[m.chat] || {};
+    if (!chatData.games) return; // Juegos desactivados
 
-    // 🔒 Juegos activados?
-    if (!chatData.games) return;
+    if (!m.isGroup) return conn.sendMessage(m.chat, { text: '❌ Este comando solo funciona en grupos.' });
 
-    // Validar que el usuario haya escrito algo
-    const text = args?.join(' ');
-    if (!text) {
-      return conn.sendMessage(m.chat, {
-        text: '❌ Debes escribir algo.\n\n👉 *Uso correcto:* `.top10 <texto>`\nEjemplo: `.top10 los más guapos`'
-      });
-    }
+    // Obtener texto después del comando
+    let text = m.text?.trim();
+    if (!text) return conn.sendMessage(m.chat, { text: '❌ Debes escribir algo.\nUso: `.top10 <texto>`' });
+    text = text.replace(new RegExp(`^\\.${command}\\s*`, 'i'), '');
+    if (!text) return conn.sendMessage(m.chat, { text: '❌ Debes escribir algo después del comando.' });
 
     // Obtener metadata del grupo
     const metadata = await conn.groupMetadata(m.chat).catch(() => null);
@@ -23,18 +21,16 @@ let handler = async (m, { conn, command, args }) => {
       return conn.sendMessage(m.chat, { text: '❌ No hay participantes en el grupo.' });
     }
 
-    // Mezclar y tomar top 10
+    // Mezclar y tomar hasta 10 participantes
     const shuffled = participants.sort(() => 0.5 - Math.random());
-    const top10 = shuffled.slice(0, 10);
+    const topCount = Math.min(10, shuffled.length);
+    const top10 = shuffled.slice(0, topCount);
 
-    // Armar lista con menciones
-    const listTop = top10
-      .map((p, i) => `🩸 ${i + 1}. @${p.id.split('@')[0]} 🩸`)
-      .join('\n');
+    // Crear lista con menciones
+    const listTop = top10.map((p, i) => `🩸 ${i + 1}. @${p.id.split('@')[0]} 🩸`).join('\n');
 
-    const finalText = `🩸🖤 *TOP 10 - ${text.toUpperCase()}* 🖤🩸\n\n${listTop}\n🩸━━━━━━━━━━━━🩸`;
+    const finalText = `🩸🖤 *TOP ${topCount} - ${text.toUpperCase()}* 🖤🩸\n\n${listTop}\n🩸━━━━━━━━━━━━🩸`;
 
-    // Enviar mensaje con menciones
     await conn.sendMessage(m.chat, { text: finalText, mentions: top10.map(p => p.id) });
 
   } catch (e) {
