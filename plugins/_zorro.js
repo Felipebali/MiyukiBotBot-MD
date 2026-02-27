@@ -14,14 +14,13 @@ let handler = async (m, { conn, command }) => {
     }
 
     // 🎯 Detectar objetivo del test
-    let who = m.quoted
-      ? m.quoted.sender
-      : (m.mentionedJid && m.mentionedJid[0]) || m.sender;
+    const who = m.quoted?.sender || m.mentionedJid?.[0] || m.sender;
+    if (!who) return conn.reply(m.chat, '❌ No se pudo determinar el usuario.', m);
 
-    let simpleId = who.split("@")[0];
+    const simpleId = who.split("@")[0];
 
     // 🎰 Porcentaje random
-    let porcentaje = Math.floor(Math.random() * 101);
+    const porcentaje = Math.floor(Math.random() * 101);
 
     // 🔥 Barra visual
     const totalBars = 10;
@@ -40,13 +39,12 @@ let handler = async (m, { conn, command }) => {
     else frase = '🗿 Santo/a puro/a, ni un pensamiento indecente.';
 
     // 🔥 Título según comando
-    const titulo =
-      command.toLowerCase() === 'zorra'
-        ? '💃 *TEST DE ZORRA 2.1* 💄'
-        : '🦊 *TEST DE ZORRO 2.1* 😏';
+    const titulo = command.toLowerCase() === 'zorra'
+      ? '💃 *TEST DE ZORRA 2.1* 💄'
+      : '🦊 *TEST DE ZORRO 2.1* 😏';
 
     // 📩 Mensaje final
-    let msg = `
+    const msg = `
 ${titulo}
 
 👤 Usuario: @${simpleId}
@@ -65,20 +63,10 @@ ${bar}
   }
 };
 
-// 🔥 **Compatibilidad máxima** para cualquier loader:
-
-handler.help = ['zorra', 'zorro'];      // menú
-handler.tags = ['fun', 'juego'];        // categoría
-handler.group = true;                   // solo grupos
-
-// Formato normal
-handler.command = ['zorra', 'zorro'];
-
-// Regex alternativo por si el loader lo usa
-handler.command = handler.command || /^(zorra|zorro)$/i;
-
-// Permitir alias en loader
-handler.customPrefix = null;
-handler.register = true;                // loader strict mode fix
+// 🔥 Configuración del handler
+handler.help = ['zorra', 'zorro'];
+handler.tags = ['fun', 'juego'];
+handler.group = true;
+handler.command = ['zorra', 'zorro']; // array que funciona en cualquier loader
 
 export default handler;
