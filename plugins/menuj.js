@@ -1,4 +1,4 @@
-// 📂 plugins/menuj.js
+// 📂 plugins/menuj.js — FelixCat_Bot
 let handler = async (m, { conn }) => {
   try {
     const chatSettings = global.db.data.chats[m.chat] || {};
@@ -13,6 +13,10 @@ Estado: ${gamesEnabled ? '🟢 Activados' : '🔴 Desactivados'}
 
     if (gamesEnabled) {
       menuText += `
+🌟 *Juego Especial y Viral:*
+🐾 *.therian* → Descubre tu animal interior PRO 🐲✨
+────────────────────────────
+
 🎲 *Juegos Disponibles:*
 
 🧠 *.math* → Operaciones matemáticas
