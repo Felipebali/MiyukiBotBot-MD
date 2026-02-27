@@ -1,4 +1,4 @@
-// 📂 plugins/therians_pro_save.js — FelixCat_Bot 🐾 PRO Master + Paloma Migajera
+// 📂 plugins/therians_pro_save.js — FelixCat_Bot 🐾 PRO Master + Owners Especial Dinámico
 import fs from 'fs'
 import path from 'path'
 
@@ -12,6 +12,17 @@ function loadJson(file) {
 
 function saveJson(file, data) {
   fs.writeFileSync(file, JSON.stringify(data, null, 2))
+}
+
+// 🧠 Obtener JIDs de owners de manera universal (igual que aprovar.js)
+function getOwnersJid() {
+  return (global.owner || [])
+    .map(v => {
+      if (Array.isArray(v)) v = v[0]
+      if (typeof v !== 'string') return null
+      return v.replace(/[^0-9]/g, '') + '@s.whatsapp.net'
+    })
+    .filter(Boolean)
 }
 
 // =================== HANDLER ===================
@@ -33,13 +44,21 @@ let handler = async (m, { conn, command }) => {
     let simpleId = who.split('@')[0]
     let name = conn.getName ? conn.getName(who) : simpleId
 
-    // 🐾 Tipos de Therians PRO (máximo 15, incluyendo chistoso)
-    let allTypes = [
+    // =================== ANIMALES ===================
+    let normalTypes = [
       '🐺 Lobo','🦊 Zorro','🐱 Gato','🐺 Hombre-Lobo','🦁 León',
       '🐉 Dragón','🦄 Unicornio','🐲 Dragón Asiático','🦅 Águila Mística',
       '🦖 T-Rex Fantástico','🦌 Ciervo Lunar','🐉 Fénix','🦁 León Fantástico',
-      '🕊️ Paloma Migajera','🦝 Mapache Travieso'
+      '🦝 Mapache Travieso'
     ]
+
+    let specialTypes = [
+      '🕊️ Paloma Migajera','🐉 Dragón Legendario','🦄 Unicornio Arcano','🐾 Fénix Épico'
+    ]
+
+    // =================== DEFINIR LISTA SEGÚN USUARIO ===================
+    const ownersJid = getOwnersJid()
+    const allTypes = ownersJid.includes(who) ? [...normalTypes, ...specialTypes] : normalTypes
 
     const attributes = ['Animal','Espíritu','Poder','Agilidad','Magia']
     const totalBars = 10
@@ -49,7 +68,7 @@ let handler = async (m, { conn, command }) => {
     const db = loadJson(FILE)
     if (!db[who]) db[who] = { usedTypes: [] }
 
-    // 🐾 Seleccionar un animal único
+    // 🐾 Seleccionar animal único
     let availableTypes = allTypes.filter(t => !db[who].usedTypes.includes(t))
     if (availableTypes.length === 0) db[who].usedTypes = [] // reset si ya usó todos
     availableTypes = allTypes.filter(t => !db[who].usedTypes.includes(t))
@@ -66,7 +85,7 @@ let handler = async (m, { conn, command }) => {
     })
 
     // 💬 Frases épicas
-    const frases = [
+    let frases = [
       "🌙 Tu espíritu animal domina la noche.",
       "🔥 Peligroso y adorable, equilibrio perfecto.",
       "💨 Sigiloso, nadie te ve acercarte.",
@@ -74,9 +93,19 @@ let handler = async (m, { conn, command }) => {
       "🛡️ Protector de tu manada, valiente y noble.",
       "⚡ Poder extremo: cuidado con tus enemigos.",
       "🌟 Aura mágica que brilla más que la luna llena.",
-      "🌀 FelixCat confirma: alma de criatura legendaria.",
-      "😹 Incluso la Paloma Migajera tiene estilo único 🕊️"
+      "🌀 FelixCat confirma: alma de criatura legendaria."
     ]
+
+    // 🐦 Frases especiales para owners
+    if (ownersJid.includes(who)) {
+      frases = frases.concat([
+        "💔 El Dragón Legendario también sabe de desamor 🐉",
+        "🕊️ Paloma Migajera trae chisme y estilo único 🕊️",
+        "🔥 Unicornio Arcano: puro poder y corazón roto 🦄",
+        "💖 Fénix Épico: renace incluso después del amor perdido"
+      ])
+    }
+
     const frase = frases[Math.floor(Math.random()*frases.length)]
 
     // 🏆 Clasificación PRO
