@@ -1,4 +1,4 @@
-// 📂 plugins/top10.js — FULL COMPATIBLE CON CUALQUIER LOADER
+// 📂 plugins/top10.js — FelixCat_Bot 🩸
 console.log('[Plugin] top10 cargado');
 
 let handler = async (m, { conn, command }) => {
@@ -8,29 +8,28 @@ let handler = async (m, { conn, command }) => {
 
     if (!m.isGroup) return conn.sendMessage(m.chat, { text: '❌ Este comando solo funciona en grupos.' });
 
-    // Obtener texto después del comando
+    // 🔹 Obtener texto después del comando
     let text = m.text?.trim();
     if (!text) return conn.sendMessage(m.chat, { text: '❌ Debes escribir algo.\nUso: `.top10 <texto>`' });
-    text = text.replace(new RegExp(`^\\.${command}\\s*`, 'i'), '');
+    text = text.replace(new RegExp(`^\\.${command}\\s*`, 'i'), '').trim();
     if (!text) return conn.sendMessage(m.chat, { text: '❌ Debes escribir algo después del comando.' });
 
-    // Obtener metadata del grupo
-    const metadata = await conn.groupMetadata(m.chat).catch(() => null);
-    const participants = metadata?.participants?.filter(p => !p.id.includes('status@broadcast'));
-    if (!participants || participants.length === 0) {
-      return conn.sendMessage(m.chat, { text: '❌ No hay participantes en el grupo.' });
-    }
+    // 🔹 Obtener participantes del grupo
+    let metadata = await conn.groupMetadata(m.chat).catch(() => null);
+    let participants = metadata?.participants?.filter(p => p.id && !p.id.includes('status@broadcast'));
+    if (!participants || participants.length === 0) return conn.sendMessage(m.chat, { text: '❌ No hay participantes en el grupo.' });
 
-    // Mezclar y tomar hasta 10 participantes
-    const shuffled = participants.sort(() => 0.5 - Math.random());
-    const topCount = Math.min(10, shuffled.length);
-    const top10 = shuffled.slice(0, topCount);
+    // 🔹 Mezclar y tomar hasta 10
+    let shuffled = participants.sort(() => 0.5 - Math.random());
+    let topCount = Math.min(10, shuffled.length);
+    let top10 = shuffled.slice(0, topCount);
 
-    // Crear lista con menciones
-    const listTop = top10.map((p, i) => `🩸 ${i + 1}. @${p.id.split('@')[0]} 🩸`).join('\n');
+    // 🔹 Crear lista con menciones
+    let listTop = top10.map((p, i) => `🩸 ${i + 1}. @${p.id.split('@')[0]} 🩸`).join('\n');
 
-    const finalText = `🩸🖤 *TOP ${topCount} - ${text.toUpperCase()}* 🖤🩸\n\n${listTop}\n🩸━━━━━━━━━━━━🩸`;
+    let finalText = `🩸🖤 *TOP ${topCount} - ${text.toUpperCase()}* 🖤🩸\n\n${listTop}\n🩸━━━━━━━━━━━━🩸`;
 
+    // 🔹 Enviar mensaje con menciones
     await conn.sendMessage(m.chat, { text: finalText, mentions: top10.map(p => p.id) });
 
   } catch (e) {
