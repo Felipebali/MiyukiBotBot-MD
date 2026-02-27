@@ -705,7 +705,7 @@ user.exp += m.exp
 user.coin -= m.coin * 1
 }
 
-let stats = global.db?.data?.stats || {}
+stats = global.db?.data?.stats || {}
 if (m.plugin) {
 let now = +new Date
 if (m.plugin in stats) {
