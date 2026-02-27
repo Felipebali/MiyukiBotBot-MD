@@ -706,31 +706,35 @@ user.coin -= m.coin * 1
 }
 
 let stats = global.db?.data?.stats || {}
+if (!global.db.data.stats) global.db.data.stats = stats
+
 if (m.plugin) {
-let now = +new Date
-if (m.plugin in stats) {
-stat = stats[m.plugin]
-if (!isNumber(stat.total))
-stat.total = 1
-if (!isNumber(stat.success))
-stat.success = m.error != null ? 0 : 1
-if (!isNumber(stat.last))
-stat.last = now
-if (!isNumber(stat.lastSuccess))
-stat.lastSuccess = m.error != null ? 0 : now
-} else
-let stat = stats[m.plugin] = {
-total: 1,
-success: m.error != null ? 0 : 1,
-last: now,
-lastSuccess: m.error != null ? 0 : now
+    let now = +new Date()
+    let stat  // Declaramos aquí para que exista en todo el bloque
+
+    if (m.plugin in stats) {
+        stat = stats[m.plugin]
+        if (!isNumber(stat.total)) stat.total = 0
+        if (!isNumber(stat.success)) stat.success = m.error != null ? 0 : 1
+        if (!isNumber(stat.last)) stat.last = now
+        if (!isNumber(stat.lastSuccess)) stat.lastSuccess = m.error != null ? 0 : now
+    } else {
+        stat = stats[m.plugin] = {
+            total: 0,
+            success: m.error != null ? 0 : 1,
+            last: now,
+            lastSuccess: m.error != null ? 0 : now
+        }
+    }
+
+    // Actualizamos estadísticas
+    stat.total += 1
+    stat.last = now
+    if (m.error == null) {
+        stat.success += 1
+        stat.lastSuccess = now
+    }
 }
-stat.total += 1
-stat.last = now
-if (m.error == null) {
-stat.success += 1
-stat.lastSuccess = now
-}}}
 
 try {
 if (!opts['noprint']) await (await import(`./lib/print.js`)).default(m, this)
