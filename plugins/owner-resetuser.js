@@ -136,7 +136,7 @@ const handler = async (m, { conn, text, mentionedJid }) => {
   const fecha = new Date().toLocaleString('es-UY', { timeZone: 'America/Montevideo' })
 
   await conn.sendMessage(m.chat, {
-    text: `${emoji} *RESET ABSOLUTO COMPLETADO*\n\n👤 Usuario: @${number}\n🧾 Eliminado de:\n• warns.json\n• parejas.json\n• hermanos.json\n• global.db\n\n📅 ${fecha}\n\n${done} Usuario restaurado como nuevo.`,
+    text: `${emoji} *RESET ABSOLUTO COMPLETADO*\n\n👤 Usuario: @${number}\n\n🧾 Se ha completado el reinicio del usuario. Todos sus registros han sido eliminados de la base de datos del sistema.\n📅 ${fecha}\n\n${done} Usuario restaurado como nuevo.`,
     mentions: [who]
   })
 }
