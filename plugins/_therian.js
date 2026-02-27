@@ -57,6 +57,7 @@ let handler = async (m, { conn }) => {
     ]
 
     const ownersJid = getOwnersJid()
+    // ✅ Si es owner: puede salir con especiales; si no: solo normales
     const allTypes = ownersJid.includes(who) ? [...normalTypes, ...specialTypes] : normalTypes
 
     const attributes = ['Animal','Espíritu','Poder','Agilidad','Magia']
@@ -95,8 +96,8 @@ let handler = async (m, { conn }) => {
       "🌀 FelixCat confirma: alma de criatura legendaria."
     ]
 
-    // Frases por animal
-    const frasesPorAnimal = {
+    // Frases especiales por animal
+    const frasesEspeciales = {
       '🕊️ Paloma Migajera': [
         "💌 Migajeando en el amor sin parar 🕊️",
         "😏 Paloma Migajera: chismes y corazones rotos",
@@ -119,12 +120,10 @@ let handler = async (m, { conn }) => {
       ]
     }
 
-    // Combinar frases
-    let frases = frasesComunes
-    if (ownersJid.includes(who) && frasesPorAnimal[selectedType]) {
-      frases = frases.concat(frasesPorAnimal[selectedType])
-    } else if (frasesPorAnimal[selectedType]) {
-      frases = frases.concat(frasesPorAnimal[selectedType])
+    // ✅ Combinar frases según usuario
+    let frases = [...frasesComunes]
+    if (ownersJid.includes(who) && specialTypes.includes(selectedType)) {
+      frases = frases.concat(frasesEspeciales[selectedType])
     }
 
     const frase = frases[Math.floor(Math.random()*frases.length)]
