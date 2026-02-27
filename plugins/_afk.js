@@ -3,13 +3,11 @@ import path from 'path'
 
 const filePath = path.resolve('./database/afk.json')
 
-// 🔹 Función para leer AFK
 const loadAfk = () => {
   if (!fs.existsSync(filePath)) fs.writeFileSync(filePath, JSON.stringify({}))
   return JSON.parse(fs.readFileSync(filePath))
 }
 
-// 🔹 Función para guardar AFK
 const saveAfk = (data) => {
   fs.writeFileSync(filePath, JSON.stringify(data, null, 2))
 }
@@ -31,27 +29,22 @@ let handler = async (m, { conn, text }) => {
   saveAfk(afkData)
 
   await conn.sendMessage(m.chat, {
-    text: `😴 @${m.sender.split('@')[0]} ahora está AFK.\n📌 Motivo: ${text}`,
-    mentions: [m.sender]
+    text: `😴 ${m.pushName || 'Usuario'} ahora está AFK.\n📌 Motivo: ${text}`
   }, { quoted: m })
 }
 
-// ===============================
-// 🔥 BEFORE (detector automático)
-// ===============================
 handler.before = async function (m, { conn }) {
   if (!m.isGroup) return
 
   let afkData = loadAfk()
 
-  // 🔹 Si el usuario estaba AFK y vuelve
+  // 🔹 Si vuelve del AFK
   if (afkData[m.sender]) {
     let tiempo = Date.now() - afkData[m.sender].time
     let segundos = Math.floor(tiempo / 1000)
 
     await conn.sendMessage(m.chat, {
-      text: `👋 @${m.sender.split('@')[0]} volvió del AFK.\n⏳ Ausente ${segundos}s\n📌 Motivo: ${afkData[m.sender].reason}`,
-      mentions: [m.sender]
+      text: `👋 ${m.pushName || 'Usuario'} volvió del AFK.\n⏳ Ausente ${segundos}s\n📌 Motivo: ${afkData[m.sender].reason}`
     }, { quoted: m })
 
     delete afkData[m.sender]
@@ -68,8 +61,7 @@ handler.before = async function (m, { conn }) {
   let segundos = Math.floor(tiempo / 1000)
 
   await conn.sendMessage(m.chat, {
-    text: `😴 @${mentioned.split('@')[0]} está AFK.\n⏳ Ausente ${segundos}s\n📌 Motivo: ${afkData[mentioned].reason}`,
-    mentions: [mentioned]
+    text: `😴 Ese usuario está AFK.\n⏳ Ausente ${segundos}s\n📌 Motivo: ${afkData[mentioned].reason}`
   }, { quoted: m })
 }
 
