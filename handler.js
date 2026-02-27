@@ -704,7 +704,7 @@ if (m.sender && (user = global.db.data.users[m.sender])) {
 user.exp += m.exp
 user.coin -= m.coin * 1
 }
-
+        
 stats = global.db?.data?.stats || {}
 if (m.plugin) {
 let now = +new Date
