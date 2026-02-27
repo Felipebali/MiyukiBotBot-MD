@@ -1,42 +1,49 @@
-import fg from 'api-dylux';
+import axios from 'axios';
 
-// 👇👇👇 ESTO ES LO QUE TU BOT NECESITA
 global.emoji = '🎵';
 
 const handler = async (m, { conn, text, args, usedPrefix, command }) => {
   try {
     if (!args[0]) {
-      return conn.sendMessage(m.chat, {
-        text: `⚡️ Debes ingresar un enlace de TikTok.\n\n📌 *Ejemplo:* ${usedPrefix + command} https://vm.tiktok.com/ZMreHF2dC/`
-      }, { quoted: m });
+      return conn.sendMessage(
+        m.chat,
+        { text: `⚡️ Debes ingresar un enlace de TikTok.\n\n📌 *Ejemplo:* ${usedPrefix + command} https://vm.tiktok.com/ZMreHF2dC/` },
+        { quoted: m }
+      );
     }
 
-    if (!/(?:https:?\/{2})?(?:w{3}|vm|vt|t)?\.?tiktok\.com\/([^\s&]+)/gi.test(text)) {
+    if (!/(?:https?:\/\/)?(?:www\.|vm\.|vt\.|t\.?)?tiktok\.com\/([^\s&]+)/gi.test(args[0])) {
       return conn.sendMessage(m.chat, { text: `❎ Enlace de TikTok inválido.` }, { quoted: m });
     }
 
     if (typeof m.react === 'function') m.react('⌛');
 
-    let data = await fg.tiktok(args[0]);
-    let { title, play, duration } = data.result;
-    let { nickname } = data.result.author;
+    // 🔹 API pública de TikTok (ejemplo: tiktokdl.xyz)
+    const { data } = await axios.get(`https://api.tiktokdl.xyz/?url=${args[0]}`);
+    if (!data || !data.video) throw new Error('No se pudo obtener el video de TikTok');
 
-    let caption = `
+    const videoUrl = data.video;
+    const title = data.title || 'Sin título';
+    const author = data.author_name || 'Desconocido';
+    const duration = data.duration || 'Desconocida';
+
+    const caption = `
 ╭━━━〔 ⚡️ *FelixCat-Bot-Descargas* ⚡️ 〕━━━⬣
-┃ ❒ *Autor:* ${nickname}
+┃ ❒ *Autor:* ${author}
 ┃ ❒ *Título:* ${title}
 ┃ ❒ *Duración:* ${duration}
 ╰━━━━━━━━━━━━━━━━━━━━━━⬣
 `.trim();
 
     await conn.sendMessage(m.chat, {
-      video: { url: play },
+      video: { url: videoUrl },
       caption
     }, { quoted: m });
 
     if (typeof m.react === 'function') m.react('✅');
 
   } catch (e) {
+    if (typeof m.react === 'function') m.react('❌');
     return conn.sendMessage(m.chat, { text: `❌ *Error:* ${e.message}` }, { quoted: m });
   }
 };
