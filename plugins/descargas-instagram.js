@@ -1,8 +1,6 @@
-import { igdl } from 'ruhend-scraper';
+import axios from 'axios';
 
 const handler = async (m, { args, conn }) => {
-
-  // Emojis locales (evita errores)
   const emoji = "📸";
   const msm = "❌";
   const rwait = "⏳";
@@ -14,17 +12,19 @@ const handler = async (m, { args, conn }) => {
   }
 
   try {
-    await m.react(rwait);
+    if (typeof m.react === 'function') m.react(rwait);
 
-    const res = await igdl(args[0]);
-    const data = res.data || res.result || [];
+    // 🔹 API pública gratuita para Instagram
+    const apiUrl = `https://api.lolhuman.xyz/api/instagram?apikey=your_api_key&url=${encodeURIComponent(args[0])}`;
+    const { data } = await axios.get(apiUrl);
+    const mediaList = data.result || [];
 
-    if (!data.length) {
-      await m.react(error);
+    if (!mediaList.length) {
+      if (typeof m.react === 'function') m.react(error);
       return conn.reply(m.chat, `${msm} No se pudo obtener el contenido.`, m);
     }
 
-    for (let media of data) {
+    for (let media of mediaList) {
       await conn.sendFile(
         m.chat,
         media.url,
@@ -34,10 +34,10 @@ const handler = async (m, { args, conn }) => {
       );
     }
 
-    await m.react(done);
+    if (typeof m.react === 'function') m.react(done);
 
   } catch (e) {
-    await m.react(error);
+    if (typeof m.react === 'function') m.react(error);
     return conn.reply(m.chat, `${msm} Ocurrió un error al procesar el enlace.`, m);
   }
 };
