@@ -1,9 +1,12 @@
-// 🌪 RESET ABSOLUTO DE USUARIO — FELI 2026 💎
+// 🌪 RESET ABSOLUTO DE USUARIO — FELI 2026 💎 FULL
+
 import fs from 'fs'
 
+// Archivos
 const WARN_FILE = './data/warns.json'
 const PAREJAS_FILE = './database/parejas.json'
 const HERMANOS_FILE = './database/hermanos.json'
+const PERFILES_FILE = './database/perfiles.json'
 
 // ================= UTILIDADES =================
 
@@ -30,6 +33,7 @@ function saveJson(file, data) {
 // ================= HANDLER =================
 
 const handler = async (m, { conn, text, mentionedJid }) => {
+
   const emoji = '♻️'
   const done = '✅'
   let user = ''
@@ -49,6 +53,7 @@ const handler = async (m, { conn, text, mentionedJid }) => {
   let removed = false
 
   // ================= BORRAR WARNS =================
+
   if (fs.existsSync(WARN_FILE)) {
     const warns = loadJson(WARN_FILE)
 
@@ -65,7 +70,21 @@ const handler = async (m, { conn, text, mentionedJid }) => {
     saveJson(WARN_FILE, warns)
   }
 
+  // ================= BORRAR PERFILES =================
+
+  if (fs.existsSync(PERFILES_FILE)) {
+    const perfiles = loadJson(PERFILES_FILE)
+
+    if (perfiles[who]) {
+      delete perfiles[who]
+      removed = true
+    }
+
+    saveJson(PERFILES_FILE, perfiles)
+  }
+
   // ================= BORRAR PAREJAS =================
+
   if (fs.existsSync(PAREJAS_FILE)) {
     const parejas = loadJson(PAREJAS_FILE)
 
@@ -76,8 +95,7 @@ const handler = async (m, { conn, text, mentionedJid }) => {
 
     for (const id in parejas) {
       if (parejas[id]?.pareja === who) {
-        parejas[id].pareja = null
-        parejas[id].estado = 'soltero'
+        delete parejas[id]
         removed = true
       }
     }
@@ -86,6 +104,7 @@ const handler = async (m, { conn, text, mentionedJid }) => {
   }
 
   // ================= BORRAR HERMANOS =================
+
   if (fs.existsSync(HERMANOS_FILE)) {
     const hermanos = loadJson(HERMANOS_FILE)
 
@@ -96,7 +115,7 @@ const handler = async (m, { conn, text, mentionedJid }) => {
 
     for (const id in hermanos) {
       if (hermanos[id]?.hermano === who) {
-        hermanos[id].hermano = null
+        delete hermanos[id]
         removed = true
       }
     }
@@ -105,6 +124,7 @@ const handler = async (m, { conn, text, mentionedJid }) => {
   }
 
   // ================= BORRAR GLOBAL.DB =================
+
   if (!global.db.data.users) global.db.data.users = {}
   if (!global.db.data.chats) global.db.data.chats = {}
 
@@ -129,14 +149,45 @@ const handler = async (m, { conn, text, mentionedJid }) => {
   if (global.db.write) await global.db.write()
 
   if (!removed) {
-    return conn.reply(m.chat, '⚠️ El usuario no se encontró en ninguna base de datos.', m)
+    return conn.reply(
+      m.chat,
+      '⚠️ No se encontraron registros asociados a ese usuario.',
+      m
+    )
   }
 
-  // ================= MENSAJE FINAL =================
-  const fecha = new Date().toLocaleString('es-UY', { timeZone: 'America/Montevideo' })
+  // ================= MENSAJES FINALES =================
 
+  const fecha = new Date().toLocaleString('es-UY', {
+    timeZone: 'America/Montevideo'
+  })
+
+  // 📢 Confirmación principal
   await conn.sendMessage(m.chat, {
-    text: `${emoji} *RESET ABSOLUTO COMPLETADO*\n\n👤 Usuario: @${number}\n\n🧾 Se ha completado el reinicio del usuario. Todos sus registros han sido eliminados de la base de datos del sistema.\n📅 ${fecha}\n\n${done} Usuario restaurado como nuevo.`,
+    text:
+`${emoji} *RESET EJECUTADO CORRECTAMENTE*
+
+👤 Usuario: @${number}
+
+El proceso de reinicialización fue aplicado con éxito.
+La base de datos fue actualizada y sincronizada.
+
+📅 ${fecha}
+
+${done} Operación finalizada sin errores.`,
+    mentions: [who]
+  })
+
+  // 🗑 Aviso oficial del sistema
+  await conn.sendMessage(m.chat, {
+    text:
+`🗑 *SISTEMA DE RESETEO 💎*
+
+Todos los registros vinculados a @${number} fueron eliminados de forma permanente.
+
+🔒 No quedan datos almacenados.
+♻️ Estado restablecido a configuración inicial.
+📡 Sistema estable.`,
     mentions: [who]
   })
 }
