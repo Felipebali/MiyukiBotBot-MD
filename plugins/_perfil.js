@@ -3,6 +3,10 @@
 let handler = async (m, { conn, text, command }) => {
   try {
 
+    // =====================
+    // NORMALIZAR SENDER
+    // =====================
+
     const jid = conn.decodeJid ? conn.decodeJid(m.sender) : m.sender
 
     // =====================
@@ -22,8 +26,6 @@ let handler = async (m, { conn, text, command }) => {
         bio: null
       }
     }
-
-    let user = global.db.data.users[jid]
 
     // =====================
     // OWNER SYSTEM
@@ -57,9 +59,12 @@ let handler = async (m, { conn, text, command }) => {
       if (!isRealOwner)
         return m.reply('❌ Solo los dueños pueden otorgar insignias.')
 
-      const target = getTarget()
+      let target = getTarget()
       if (!target)
         return m.reply('⚠️ Menciona o responde al usuario.')
+
+      // 🔥 NORMALIZAR TARGET
+      target = conn.decodeJid ? conn.decodeJid(target) : target
 
       if (!text)
         return m.reply('✏️ Escribe la insignia.\nEjemplo: .otorgar VIP @usuario')
@@ -76,7 +81,7 @@ let handler = async (m, { conn, text, command }) => {
 
       let userTarget = global.db.data.users[target]
 
-      if (!userTarget.insignias)
+      if (!Array.isArray(userTarget.insignias))
         userTarget.insignias = []
 
       if (userTarget.insignias.includes(text))
@@ -101,13 +106,19 @@ let handler = async (m, { conn, text, command }) => {
       if (!isRealOwner)
         return m.reply('❌ Solo los dueños pueden quitar insignias.')
 
-      const target = getTarget()
+      let target = getTarget()
       if (!target)
         return m.reply('⚠️ Menciona o responde al usuario.')
 
+      // 🔥 NORMALIZAR TARGET
+      target = conn.decodeJid ? conn.decodeJid(target) : target
+
+      if (!global.db.data.users[target])
+        return m.reply('❌ Ese usuario no está registrado.')
+
       let userTarget = global.db.data.users[target]
 
-      if (!userTarget?.insignias?.length)
+      if (!Array.isArray(userTarget.insignias) || !userTarget.insignias.length)
         return m.reply('❌ Ese usuario no tiene insignias.')
 
       const cantidad = userTarget.insignias.length
@@ -137,7 +148,7 @@ let handler = async (m, { conn, text, command }) => {
 
       for (let id in global.db.data.users) {
         let u = global.db.data.users[id]
-        if (u.insignias?.length) {
+        if (Array.isArray(u.insignias) && u.insignias.length) {
           lista.push(`👤 @${id.split('@')[0]}\n🏅 ${u.insignias.join(', ')}`)
           mentions.push(id)
         }
@@ -156,6 +167,7 @@ let handler = async (m, { conn, text, command }) => {
 
   } catch (e) {
     console.error(e)
+    m.reply('❌ Ocurrió un error.')
   }
 }
 
