@@ -1,15 +1,18 @@
-// 📂 plugins/perfil.js — PERFIL FelixCat 🐾 ZODIACO PRO + GENERO LIBRE
+// 📂 plugins/perfil.js — PERFIL FelixCat 🐾 ZODIACO PRO + GENERO LIBRE (FIXED)
 
 let handler = async (m, { conn, text, command }) => {
   try {
+
+    command = command?.toLowerCase()
 
     const jid = conn.decodeJid ? conn.decodeJid(m.sender) : m.sender
     const username = jid.split('@')[0]
 
     // =====================
-    // DATABASE
+    // DATABASE SEGURA
     // =====================
 
+    if (!global.db) global.db = {}
     if (!global.db.data) global.db.data = {}
     if (!global.db.data.users) global.db.data.users = {}
 
@@ -25,6 +28,8 @@ let handler = async (m, { conn, text, command }) => {
     }
 
     let user = global.db.data.users[jid]
+
+    if (!user.insignias) user.insignias = []
 
     if (m.isGroup && !user.joinGroup) {
       user.joinGroup = Date.now()
@@ -126,18 +131,13 @@ let handler = async (m, { conn, text, command }) => {
       else if ((m === 9 && d >= 23) || (m === 10 && d <= 22)) index = 9
       else if ((m === 10 && d >= 23) || (m === 11 && d <= 21)) index = 10
       else if ((m === 11 && d >= 22) || (m === 12 && d <= 21)) index = 11
-      else index = 0
 
       return signos[index]
     }
 
-    // =====================
-    // TARGET
-    // =====================
-
     const getTarget = () => {
-      if (m.mentionedJid && m.mentionedJid.length) return m.mentionedJid[0]
-      if (m.quoted && m.quoted.sender) return m.quoted.sender
+      if (m.mentionedJid?.length) return m.mentionedJid[0]
+      if (m.quoted?.sender) return m.quoted.sender
       return null
     }
 
@@ -163,12 +163,7 @@ let handler = async (m, { conn, text, command }) => {
       return m.reply(`✅ Género guardado:\n${user.genero}`)
     }
 
-    // =====================
-    // OTORGAR INSIGNIA
-    // =====================
-
     if (command === 'otorgar') {
-
       if (!isRealOwner) return m.reply('❌ Solo los dueños.')
 
       const target = getTarget()
@@ -177,15 +172,19 @@ let handler = async (m, { conn, text, command }) => {
       const nombre = text.replace(/@\d+/g, '').trim()
       if (!nombre) return m.reply('✏️ Escribe insignia.')
 
-      if (!global.db.data.users[target])
+      if (!global.db.data.users[target]) {
         global.db.data.users[target] = { insignias: [] }
+      }
+
+      if (!global.db.data.users[target].insignias) {
+        global.db.data.users[target].insignias = []
+      }
 
       let tu = global.db.data.users[target]
 
-      if (!tu.insignias) tu.insignias = []
-
-      if (!tu.insignias.includes(nombre))
+      if (!tu.insignias.includes(nombre)) {
         tu.insignias.push(nombre)
+      }
 
       return conn.reply(
         m.chat,
@@ -195,27 +194,17 @@ let handler = async (m, { conn, text, command }) => {
       )
     }
 
-    // =====================
-    // 🔥 QUITAR INSIGNIAS (MEJORADO)
-    // =====================
-
     if (command === 'quitar') {
-
       if (!isRealOwner) return m.reply('❌ Solo los dueños.')
 
       const target = getTarget()
       if (!target) return m.reply('✏️ Menciona usuario.')
 
-      if (!global.db.data.users[target])
-        return m.reply('❌ Usuario sin datos.')
-
       let tu = global.db.data.users[target]
-
-      if (!tu.insignias || !tu.insignias.length)
+      if (!tu?.insignias?.length)
         return m.reply('❌ No tiene insignias.')
 
       const antes = tu.insignias.join(', ')
-
       tu.insignias = []
 
       return conn.reply(
@@ -230,12 +219,7 @@ ${antes}`,
       )
     }
 
-    // =====================
-    // VER INSIGNIAS
-    // =====================
-
     if (command === 'verinsignias') {
-
       if (!isRealOwner) return m.reply('❌ Solo los dueños.')
 
       let lista = []
@@ -243,7 +227,7 @@ ${antes}`,
 
       for (let id in global.db.data.users) {
         let u = global.db.data.users[id]
-        if (u.insignias?.length) {
+        if (u?.insignias?.length) {
           lista.push(`👤 @${id.split('@')[0]}\n🏅 ${u.insignias.join(', ')}`)
           mentions.push(id)
         }
@@ -260,10 +244,6 @@ ${antes}`,
       )
     }
 
-    // =====================
-    // PERFIL
-    // =====================
-
     if (command === 'perfil') {
 
       const nacimiento = user.birth || 'No registrado'
@@ -279,9 +259,6 @@ ${antes}`,
         : 'No disponible'
 
       const zodiaco = user.birth ? obtenerZodiaco(user.birth) : null
-      const signo = zodiaco?.nombre || 'No disponible'
-      const elemento = zodiaco?.elemento || 'No disponible'
-      const personalidad = zodiaco?.personalidad || 'No disponible'
 
       let insignias = []
 
@@ -293,18 +270,7 @@ ${antes}`,
 
       if (!insignias.length) insignias.push('Ninguna')
 
-      let rol = 'Usuario 👤'
-      if (isRealOwner) rol = 'Dueño 👑'
-      else if (isAdmin) rol = 'Admin 🛡️'
-
-      let ingresoTexto = 'No disponible'
-
-      if (user.joinGroup) {
-        const ingreso = new Date(user.joinGroup)
-        const hoy = new Date()
-        const diasGrupo = Math.floor((hoy - ingreso) / 86400000)
-        ingresoTexto = `${ingreso.toLocaleDateString()} (${diasGrupo} días)`
-      }
+      let rol = isRealOwner ? 'Dueño 👑' : isAdmin ? 'Admin 🛡️' : 'Usuario 👤'
 
       const txt = `
 👤 *PERFIL DE USUARIO*
@@ -316,32 +282,21 @@ ${antes}`,
 ${insignias.join('\n')}
 
 🚻 Género: ${genero}
-
 🎂 Nacimiento: ${nacimiento}
-♑ Signo: ${signo}
-🌌 Elemento: ${elemento}
-🧠 Personalidad: ${personalidad}
+♑ Signo: ${zodiaco?.nombre || 'No disponible'}
+🌌 Elemento: ${zodiaco?.elemento || 'No disponible'}
+🧠 Personalidad: ${zodiaco?.personalidad || 'No disponible'}
 
 🎉 Edad: ${edadTexto}
 🎂 Cumple en: ${cumpleTexto}
 
-📥 Ingreso: ${ingresoTexto}
-
 📝 Bio: ${bio}
 `.trim()
 
-      let pp = null
-      try {
-        pp = await conn.profilePictureUrl(jid, 'image')
-      } catch {}
-
-      await conn.sendMessage(
-        m.chat,
-        pp
-          ? { image: { url: pp }, caption: txt, mentions: [jid] }
-          : { text: txt, mentions: [jid] },
-        { quoted: m }
-      )
+      await conn.sendMessage(m.chat, {
+        text: txt,
+        mentions: [jid]
+      }, { quoted: m })
     }
 
   } catch (e) {
@@ -349,14 +304,6 @@ ${insignias.join('\n')}
   }
 }
 
-handler.command = [
-  'perfil',
-  'setbr',
-  'bio',
-  'genero',
-  'otorgar',
-  'quitar',
-  'verinsignias'
-]
+handler.command = /^(perfil|setbr|bio|genero|otorgar|quitar|verinsignias)$/i
 
 export default handler
