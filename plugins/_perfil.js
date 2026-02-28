@@ -67,7 +67,10 @@ let handler = async (m, { conn, text, command }) => {
       if (!global.db.data.users[target]) {
         global.db.data.users[target] = {
           registered: Date.now(),
-          insignias: []
+          insignias: [],
+          genero: null,
+          birth: null,
+          bio: null
         }
       }
 
@@ -90,7 +93,7 @@ let handler = async (m, { conn, text, command }) => {
     }
 
     // =====================
-    // QUITAR INSIGNIA
+    // QUITAR TODAS LAS INSIGNIAS
     // =====================
 
     if (command === 'quitar') {
@@ -102,23 +105,19 @@ let handler = async (m, { conn, text, command }) => {
       if (!target)
         return m.reply('⚠️ Menciona o responde al usuario.')
 
-      if (!text)
-        return m.reply('✏️ Escribe la insignia a quitar.\nEjemplo: .quitar VIP @usuario')
-
       let userTarget = global.db.data.users[target]
 
       if (!userTarget?.insignias?.length)
         return m.reply('❌ Ese usuario no tiene insignias.')
 
-      if (!userTarget.insignias.includes(text))
-        return m.reply('❌ Ese usuario no tiene esa insignia.')
+      const cantidad = userTarget.insignias.length
 
-      userTarget.insignias =
-        userTarget.insignias.filter(i => i !== text)
+      // Vaciar todas
+      userTarget.insignias = []
 
       return conn.reply(
         m.chat,
-        `❌ Insignia quitada a @${target.split('@')[0]}\n🗑️ Eliminada: ${text}`,
+        `🗑️ Se eliminaron ${cantidad} insignias de @${target.split('@')[0]}`,
         m,
         { mentions: [target] }
       )
