@@ -1,5 +1,3 @@
-// 🌸 FELI 2026 LOVE SUPREME — FULL PROTECT 💎
-
 import fs from 'fs'
 import path from 'path'
 
@@ -48,12 +46,6 @@ let handler = async (m, { conn, command }) => {
     return db[id]
   }
 
-  const getTarget = () => {
-    if (m.mentionedJid?.length) return m.mentionedJid[0]
-    if (m.quoted?.sender) return conn.decodeJid(m.quoted.sender)
-    return null
-  }
-
   const tag = (id) => '@' + id.split('@')[0]
 
   const tiempo = (ms) => {
@@ -62,17 +54,21 @@ let handler = async (m, { conn, command }) => {
     return `${dias} día(s) y ${horas} hora(s)`
   }
 
-  const box = (title, text) => {
-    return `╭━━━〔 ${title} 〕━━━⬣
+  const box = (title, text) => `╭━━━〔 ${title} 〕━━━⬣
 ${text}
 ╰━━━━━━━━━━━━━━━━⬣`
+
+  const getTarget = () => {
+    if (m.mentionedJid?.length) return m.mentionedJid[0]
+    if (m.quoted?.sender) return conn.decodeJid(m.quoted.sender)
+    return null
   }
 
-  /* 💘 PROPUESTA */
+  /* 💘 PAREJA */
   if (command === 'pareja') {
 
     const target = getTarget()
-    if (!target) return m.reply('💌 Menciona a alguien.')
+    if (!target) return m.reply('💌 Menciona o responde a alguien.')
     if (target === sender) return m.reply('😹 No puedes proponerte a ti mismo.')
 
     const user = getUser(sender)
@@ -99,7 +95,7 @@ Respeta relaciones ajenas.`),
     return conn.reply(m.chat,
       box('💘 PROPUESTA DE AMOR',
 `${tag(sender)} quiere estar con ${tag(target)} ❤️
-Responde con:
+Responde:
 ✨ *.aceptar*
 ✨ *.rechazar*`),
       m, { mentions: [sender, target] })
@@ -153,23 +149,20 @@ Deben esperar 7 días para casarse.`),
 
   /* 💑 RELACION */
   if (command === 'relacion') {
+
     const user = getUser(sender)
-    if (!user.pareja)
-      return m.reply('💔 No tienes pareja.')
+    if (!user.pareja) return m.reply('💔 No tienes pareja.')
 
     const estado = user.matrimonioFecha ? '💍 Casados' : '💑 Novios'
     const tiempoJuntos = tiempo(ahora - user.relacionFecha)
 
-    return conn.reply(
-      m.chat,
+    return conn.reply(m.chat,
       box('💖 ESTADO DE RELACIÓN',
 `${tag(sender)} ❤️ ${tag(user.pareja)}
 Estado: ${estado}
 Tiempo juntos: ${tiempoJuntos}
 Nivel de amor: ❤️ ${user.amor}`),
-      m,
-      { mentions: [sender, user.pareja] }
-    )
+      m, { mentions: [sender, user.pareja] })
   }
 
   /* 💍 CASARSE */
@@ -183,15 +176,12 @@ Nivel de amor: ❤️ ${user.amor}`),
 
     if (tiempoRelacion < SIETE_DIAS) {
       const faltan = tiempo(SIETE_DIAS - tiempoRelacion)
-      return conn.reply(
-        m.chat,
+      return conn.reply(m.chat,
         box('⏳ AÚN NO PUEDEN CASARSE',
 `${tag(sender)} ❤️ ${tag(user.pareja)}
 Deben esperar 7 días.
 Faltan ${faltan}.`),
-        m,
-        { mentions: [sender, user.pareja] }
-      )
+        m, { mentions: [sender, user.pareja] })
     }
 
     const pareja = getUser(user.pareja)
@@ -205,16 +195,14 @@ Faltan ${faltan}.`),
 Responde:
 ✨ *.si*
 ✨ *.no*`),
-      m,
-      { mentions: [sender, user.pareja] })
+      m, { mentions: [sender, user.pareja] })
   }
 
   /* 💍 SI */
   if (command === 'si') {
 
     const user = getUser(sender)
-    if (!user.propuestaMatrimonio)
-      return m.reply('❌ No tienes propuestas.')
+    if (!user.propuestaMatrimonio) return m.reply('❌ No tienes propuestas.')
 
     const proposer = user.propuestaMatrimonio
     const proposerUser = getUser(proposer)
@@ -233,15 +221,13 @@ Responde:
       box('💍 MATRIMONIO CONFIRMADO',
 `${tag(sender)} 💍 ${tag(proposer)}
 Ahora están oficialmente casados 💖`),
-      m,
-      { mentions: [sender, proposer] })
+      m, { mentions: [sender, proposer] })
   }
 
   /* ❌ NO */
   if (command === 'no') {
     const user = getUser(sender)
-    if (!user.propuestaMatrimonio)
-      return m.reply('❌ No tienes propuestas.')
+    if (!user.propuestaMatrimonio) return m.reply('❌ No tienes propuestas.')
 
     const proposer = user.propuestaMatrimonio
     user.propuestaMatrimonio = null
@@ -250,8 +236,7 @@ Ahora están oficialmente casados 💖`),
     return conn.reply(m.chat,
       box('💔 MATRIMONIO RECHAZADO',
 `${tag(sender)} ha rechazado casarse con ${tag(proposer)}.`),
-      m,
-      { mentions: [sender, proposer] })
+      m, { mentions: [sender, proposer] })
   }
 
   /* 💔 TERMINAR */
@@ -276,22 +261,18 @@ Ahora están oficialmente casados 💖`),
 
     saveDB(db)
 
-    return conn.reply(
-      m.chat,
+    return conn.reply(m.chat,
       box('💔 RELACIÓN TERMINADA',
 `${tag(sender)} 💔 ${tag(exId)}
 Ahora ambos están solteros.`),
-      m,
-      { mentions: [sender, exId] }
-    )
+      m, { mentions: [sender, exId] })
   }
 
   /* 💔 DIVORCIAR */
   if (command === 'divorciar') {
 
     const user = getUser(sender)
-    if (!user.matrimonioFecha)
-      return m.reply('❌ No estás casado.')
+    if (!user.matrimonioFecha) return m.reply('❌ No estás casado.')
 
     const pareja = getUser(user.pareja)
 
@@ -302,45 +283,51 @@ Ahora ambos están solteros.`),
 
     saveDB(db)
 
-    return conn.reply(
-      m.chat,
+    return conn.reply(m.chat,
       box('💔 DIVORCIO',
 `${tag(sender)} 💔 ${tag(user.pareja)}
 Siguen siendo novios.`),
-      m,
-      { mentions: [sender, user.pareja] }
-    )
+      m, { mentions: [sender, user.pareja] })
   }
 
-  /* 💕 INTERACCIONES */
+  /* 💕 INTERACCIONES CON PROTECCIÓN */
   if (['besar','abrazar','amor'].includes(command)) {
 
     const user = getUser(sender)
     if (!user.pareja) return m.reply('💔 No tienes pareja.')
 
-    const pareja = getUser(user.pareja)
+    const parejaId = user.pareja
+    const pareja = getUser(parejaId)
 
-    let suma = 0
-    if (command === 'besar') suma = 5
-    if (command === 'abrazar') suma = 3
-    if (command === 'amor') suma = 10
+    let citado = null
+    if (m.quoted?.sender)
+      citado = conn.decodeJid(m.quoted.sender)
+
+    if (citado && citado !== parejaId) {
+      return conn.reply(m.chat,
+        box('🚨 INFIDELIDAD DETECTADA',
+`${tag(sender)} intentó ${command} a ${tag(citado)} 😾
+Pero su pareja es ${tag(parejaId)} ❤️`),
+        m, { mentions: [sender, citado, parejaId] })
+    }
+
+    let suma = command === 'besar' ? 5 :
+               command === 'abrazar' ? 3 : 10
 
     user.amor += suma
     pareja.amor += suma
 
     saveDB(db)
 
-    return conn.reply(
-      m.chat,
+    return conn.reply(m.chat,
       box('💞 MOMENTO ROMÁNTICO',
-`${tag(sender)} 💕 ${tag(user.pareja)}
+`${tag(sender)} 💕 ${tag(parejaId)}
+Acción: ${command}
 Nuevo nivel de amor: ❤️ ${user.amor}`),
-      m,
-      { mentions: [sender, user.pareja] }
-    )
+      m, { mentions: [sender, parejaId] })
   }
 
-  /* 👑 LISTA PAREJAS */
+  /* 👑 LISTAPAREJA */
   if (command === 'listapareja') {
 
     if (!ownersJid.includes(sender))
@@ -365,8 +352,7 @@ Amor: ❤️ ${user.amor}
 
     return conn.reply(m.chat,
       box('💞 PAREJAS ACTIVAS', texto),
-      m,
-      { mentions })
+      m, { mentions })
   }
 
   /* 🧹 CLEARSHIP */
