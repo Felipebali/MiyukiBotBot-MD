@@ -35,7 +35,6 @@ function saveJson(file, data) {
 const handler = async (m, { conn, text, mentionedJid }) => {
 
   const emoji = '♻️'
-  const done = '✅'
   let user = ''
 
   // 🔎 Detectar usuario
@@ -53,10 +52,8 @@ const handler = async (m, { conn, text, mentionedJid }) => {
   let removed = false
 
   // ================= BORRAR WARNS =================
-
   if (fs.existsSync(WARN_FILE)) {
     const warns = loadJson(WARN_FILE)
-
     for (const chatId in warns) {
       if (!warns[chatId]) continue
       for (const key in warns[chatId]) {
@@ -66,84 +63,48 @@ const handler = async (m, { conn, text, mentionedJid }) => {
         }
       }
     }
-
     saveJson(WARN_FILE, warns)
   }
 
   // ================= BORRAR PERFILES =================
-
   if (fs.existsSync(PERFILES_FILE)) {
     const perfiles = loadJson(PERFILES_FILE)
-
     if (perfiles[who]) {
       delete perfiles[who]
       removed = true
     }
-
     saveJson(PERFILES_FILE, perfiles)
   }
 
   // ================= BORRAR PAREJAS =================
-
   if (fs.existsSync(PAREJAS_FILE)) {
     const parejas = loadJson(PAREJAS_FILE)
-
-    if (parejas[who]) {
-      delete parejas[who]
-      removed = true
-    }
-
     for (const id in parejas) {
-      if (parejas[id]?.pareja === who) {
+      if (id === who || parejas[id]?.pareja === who) {
         delete parejas[id]
         removed = true
       }
     }
-
     saveJson(PAREJAS_FILE, parejas)
   }
 
   // ================= BORRAR HERMANOS =================
-
   if (fs.existsSync(HERMANOS_FILE)) {
     const hermanos = loadJson(HERMANOS_FILE)
-
-    if (hermanos[who]) {
-      delete hermanos[who]
-      removed = true
-    }
-
     for (const id in hermanos) {
-      if (hermanos[id]?.hermano === who) {
+      if (id === who || hermanos[id]?.hermano === who) {
         delete hermanos[id]
         removed = true
       }
     }
-
     saveJson(HERMANOS_FILE, hermanos)
   }
 
   // ================= BORRAR GLOBAL.DB =================
-
   if (!global.db.data.users) global.db.data.users = {}
-  if (!global.db.data.chats) global.db.data.chats = {}
-
   if (global.db.data.users[who]) {
     delete global.db.data.users[who]
     removed = true
-  }
-
-  for (const chat of Object.values(global.db.data.chats)) {
-    if (!chat) continue
-
-    if (chat.warns) {
-      for (const key in chat.warns) {
-        if (key.replace(/[^\d]/g, '') === number) {
-          delete chat.warns[key]
-          removed = true
-        }
-      }
-    }
   }
 
   if (global.db.write) await global.db.write()
@@ -156,38 +117,21 @@ const handler = async (m, { conn, text, mentionedJid }) => {
     )
   }
 
-  // ================= MENSAJES FINALES =================
+  // ================= MENSAJE FINAL =================
 
   const fecha = new Date().toLocaleString('es-UY', {
     timeZone: 'America/Montevideo'
   })
 
-  // 📢 Confirmación principal
   await conn.sendMessage(m.chat, {
     text:
 `${emoji} *RESET EJECUTADO CORRECTAMENTE*
 
 👤 Usuario: @${number}
-
-El proceso de reinicialización fue aplicado con éxito.
-La base de datos fue actualizada y sincronizada.
-
 📅 ${fecha}
 
-${done} Operación finalizada sin errores.`,
-    mentions: [who]
-  })
-
-  // 🗑 Aviso oficial del sistema
-  await conn.sendMessage(m.chat, {
-    text:
-`🗑 *SISTEMA DE RESETEO 💎*
-
-Todos los registros vinculados a @${number} fueron eliminados de forma permanente.
-
-🔒 No quedan datos almacenados.
-♻️ Estado restablecido a configuración inicial.
-📡 Sistema estable.`,
+El usuario ha sido reinicializado en el sistema.
+Operación completada sin errores.`,
     mentions: [who]
   })
 }
