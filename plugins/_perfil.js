@@ -27,7 +27,6 @@ const loadParejas = () => JSON.parse(fs.readFileSync(parejasFile))
 
 let handler = async (m, { conn, text, command }) => {
   try {
-
     const perfiles = loadPerfiles()
     const parejas = loadParejas()
 
@@ -35,7 +34,7 @@ let handler = async (m, { conn, text, command }) => {
     const username = jid.split('@')[0]
 
     // =====================
-    // CREAR PERFIL
+    // CREAR PERFIL SI NO EXISTE
     // =====================
 
     if (!perfiles[jid]) {
@@ -49,7 +48,7 @@ let handler = async (m, { conn, text, command }) => {
       }
     }
 
-    let user = perfiles[jid]
+    const user = perfiles[jid]
 
     if (m.isGroup && !user.joinGroup)
       user.joinGroup = Date.now()
@@ -59,7 +58,6 @@ let handler = async (m, { conn, text, command }) => {
     // =====================
 
     const senderNumber = jid.replace(/[^0-9]/g, '')
-
     const ownerNumbers = (global.owner || []).map(v => {
       if (Array.isArray(v)) v = v[0]
       return String(v).replace(/[^0-9]/g, '')
@@ -74,21 +72,19 @@ let handler = async (m, { conn, text, command }) => {
 
     const calcularEdad = (fecha) => {
       const [d, m, a] = fecha.split('/').map(Number)
-      if (!d || !m || !a) return null
+      if (!d || !m || !a) return 'No disponible'
       const nacimiento = new Date(a, m - 1, d)
       const hoy = new Date()
       let edad = hoy.getFullYear() - nacimiento.getFullYear()
-      if (
-        hoy.getMonth() < nacimiento.getMonth() ||
-        (hoy.getMonth() === nacimiento.getMonth() &&
-          hoy.getDate() < nacimiento.getDate())
-      ) edad--
+      if (hoy.getMonth() < nacimiento.getMonth() || 
+          (hoy.getMonth() === nacimiento.getMonth() && hoy.getDate() < nacimiento.getDate()))
+        edad--
       return edad
     }
 
     const diasParaCumple = (fecha) => {
       const [d, m] = fecha.split('/').map(Number)
-      if (!d || !m) return null
+      if (!d || !m) return 'No disponible'
       const hoy = new Date()
       let cumple = new Date(hoy.getFullYear(), m - 1, d)
       if (cumple < hoy) cumple.setFullYear(hoy.getFullYear() + 1)
@@ -97,7 +93,7 @@ let handler = async (m, { conn, text, command }) => {
 
     const obtenerZodiaco = (fecha) => {
       const [d, m] = fecha.split('/').map(Number)
-      if (!d || !m) return null
+      if (!d || !m) return { nombre: 'No disponible', elemento: 'No disponible' }
 
       const signos = [
         { nombre: 'Capricornio ♑', elemento: '🌍 Tierra' },
@@ -115,7 +111,6 @@ let handler = async (m, { conn, text, command }) => {
       ]
 
       let index = 0
-
       if ((m === 1 && d >= 20) || (m === 2 && d <= 18)) index = 1
       else if ((m === 2 && d >= 19) || (m === 3 && d <= 20)) index = 2
       else if ((m === 3 && d >= 21) || (m === 4 && d <= 19)) index = 3
@@ -132,7 +127,7 @@ let handler = async (m, { conn, text, command }) => {
     }
 
     const tiempoJuntos = (fecha) => {
-      if (!fecha) return null
+      if (!fecha) return 0
       const inicio = new Date(fecha)
       const hoy = new Date()
       return Math.floor((hoy - inicio) / 86400000)
@@ -145,9 +140,10 @@ let handler = async (m, { conn, text, command }) => {
     }
 
     // =====================
-    // SETBR
+    // COMANDOS
     // =====================
 
+    // SETBR
     if (command === 'setbr') {
       if (!text) return m.reply('Usa: .setbr DD/MM/AAAA')
       user.birth = text.trim()
@@ -155,10 +151,7 @@ let handler = async (m, { conn, text, command }) => {
       return m.reply('🎂 Fecha guardada.')
     }
 
-    // =====================
     // BIO
-    // =====================
-
     if (command === 'bio') {
       if (!text) return m.reply('Escribe tu bio.')
       user.bio = text.trim()
@@ -166,10 +159,7 @@ let handler = async (m, { conn, text, command }) => {
       return m.reply('📝 Bio actualizada.')
     }
 
-    // =====================
     // GENERO
-    // =====================
-
     if (command === 'genero') {
       if (!text) return m.reply('Ejemplo: .genero Hombre')
       user.genero = text.trim()
@@ -177,43 +167,30 @@ let handler = async (m, { conn, text, command }) => {
       return m.reply('🚻 Género actualizado.')
     }
 
-    // =====================
-    // OTORGAR INSIGNIA (OWNER)
-    // =====================
-
+    // OTORGAR INSIGNIA
     if (command === 'otorgar') {
       if (!isRealOwner) return m.reply('❌ Solo el owner.')
       const target = getTarget()
       if (!target) return m.reply('Menciona a alguien.')
       const insignia = text.replace(/@\d+/g, '').trim()
       if (!insignia) return m.reply('Escribe la insignia.')
-
       if (!perfiles[target]) perfiles[target] = { insignias: [] }
       perfiles[target].insignias.push(insignia)
-
       savePerfiles(perfiles)
       return m.reply('🏅 Insignia otorgada.')
     }
 
-    // =====================
-    // QUITAR INSIGNIAS (OWNER)
-    // =====================
-
+    // QUITAR INSIGNIAS
     if (command === 'quitar') {
       if (!isRealOwner) return m.reply('❌ Solo el owner.')
       const target = getTarget()
       if (!target) return m.reply('Menciona a alguien.')
-
       if (perfiles[target]) perfiles[target].insignias = []
-
       savePerfiles(perfiles)
       return m.reply('🗑️ Insignias eliminadas.')
     }
 
-    // =====================
     // VER INSIGNIAS
-    // =====================
-
     if (command === 'insignias') {
       return m.reply(
         user.insignias?.length
@@ -222,39 +199,32 @@ let handler = async (m, { conn, text, command }) => {
       )
     }
 
-    // =====================
-    // PERFIL (PAREJAS INTACTO)
-    // =====================
-
+    // PERFIL
     if (command === 'perfil') {
 
       let parejaTexto = '💔 Sin pareja'
       let parejaJid = null
+      let amor = 0
+      let diasRelacion = 0
+      let estado = ''
 
-      if (parejas[jid]) {
-
-        const data = parejas[jid]
+      const data = parejas[jid]
+      if (data && data.pareja) {
         parejaJid = data.pareja
-
-        const estado = data.estado === 'casados'
-          ? '💍 Casados'
-          : '❤️ Novios'
-
-        const diasRelacion = tiempoJuntos(
-          data.matrimonioFecha || data.relacionFecha
-        )
-
+        estado = data.matrimonioFecha ? '💍 Casados' : '❤️ Novios'
+        amor = data.amor || 0
+        diasRelacion = tiempoJuntos(data.matrimonioFecha || data.relacionFecha)
         parejaTexto = `
 ${estado}
 💞 Pareja: @${parejaJid.split('@')[0]}
-🔥 Amor: ${data.amor || 0}%
-⏳ Tiempo juntos: ${diasRelacion || 0} días
+🔥 Amor: ${amor}%
+⏳ Tiempo juntos: ${diasRelacion} días
 `.trim()
       }
 
-      const edad = user.birth ? calcularEdad(user.birth) : null
-      const dias = user.birth ? diasParaCumple(user.birth) : null
-      const zodiaco = user.birth ? obtenerZodiaco(user.birth) : null
+      const edad = user.birth ? calcularEdad(user.birth) : 'No disponible'
+      const dias = user.birth ? diasParaCumple(user.birth) : 'No disponible'
+      const zodiaco = user.birth ? obtenerZodiaco(user.birth) : { nombre: 'No disponible', elemento: 'No disponible' }
 
       const textoPerfil = `
 👤 PERFIL
@@ -268,11 +238,11 @@ ${user.insignias?.length ? user.insignias.join('\n') : 'Ninguna'}
 
 🚻 Género: ${user.genero || 'No definido'}
 🎂 Nacimiento: ${user.birth || 'No registrado'}
-🎉 Edad: ${edad || 'No disponible'}
-🎂 Próximo cumple: ${dias || 'No disponible'} días
+🎉 Edad: ${edad}
+🎂 Próximo cumple: ${dias} días
 
-♑ Signo: ${zodiaco?.nombre || 'No disponible'}
-🌌 Elemento: ${zodiaco?.elemento || 'No disponible'}
+♑ Signo: ${zodiaco.nombre}
+🌌 Elemento: ${zodiaco.elemento}
 
 ${parejaTexto}
 
@@ -282,9 +252,7 @@ ${parejaTexto}
       savePerfiles(perfiles)
 
       let pp = null
-      try {
-        pp = await conn.profilePictureUrl(jid, 'image')
-      } catch {}
+      try { pp = await conn.profilePictureUrl(jid, 'image') } catch {}
 
       const mentions = [jid]
       if (parejaJid) mentions.push(parejaJid)
@@ -302,7 +270,7 @@ ${parejaTexto}
 
   } catch (e) {
     console.error(e)
-    m.reply('Error en perfil.')
+    m.reply('❌ Error en perfil.')
   }
 }
 
