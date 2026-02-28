@@ -1,25 +1,29 @@
-// 📂 plugins/perfil.js — PERFIL FelixCat 🐾 FULL SISTEMA JSON
+// 📂 plugins/perfil.js — PERFIL FelixCat 🐾 ZODIACO PRO + FOTO + PAREJA REAL
 
 import fs from 'fs'
 import path from 'path'
 
-const perfilesPath = './database/perfiles.json'
-const parejasPath = './database/parejas.json'
+const dbPath = './database'
+const perfilesFile = path.join(dbPath, 'perfiles.json')
+const parejasFile = path.join(dbPath, 'parejas.json')
 
 // =====================
-// FUNCIONES JSON
+// CREAR DB SI NO EXISTE
 // =====================
 
-const loadJSON = (file) => {
-  if (!fs.existsSync(file)) {
-    fs.writeFileSync(file, JSON.stringify({}))
-  }
-  return JSON.parse(fs.readFileSync(file))
-}
+if (!fs.existsSync(dbPath)) fs.mkdirSync(dbPath)
 
-const saveJSON = (file, data) => {
-  fs.writeFileSync(file, JSON.stringify(data, null, 2))
-}
+if (!fs.existsSync(perfilesFile))
+  fs.writeFileSync(perfilesFile, JSON.stringify({}, null, 2))
+
+if (!fs.existsSync(parejasFile))
+  fs.writeFileSync(parejasFile, JSON.stringify({}, null, 2))
+
+const loadPerfiles = () => JSON.parse(fs.readFileSync(perfilesFile))
+const savePerfiles = (data) =>
+  fs.writeFileSync(perfilesFile, JSON.stringify(data, null, 2))
+
+const loadParejas = () => JSON.parse(fs.readFileSync(parejasFile))
 
 // =====================
 // HANDLER
@@ -28,11 +32,11 @@ const saveJSON = (file, data) => {
 let handler = async (m, { conn, text, command }) => {
   try {
 
+    const perfiles = loadPerfiles()
+    const parejas = loadParejas()
+
     const jid = conn.decodeJid ? conn.decodeJid(m.sender) : m.sender
     const username = jid.split('@')[0]
-
-    let perfiles = loadJSON(perfilesPath)
-    let parejas = loadJSON(parejasPath)
 
     // =====================
     // CREAR PERFIL SI NO EXISTE
@@ -47,35 +51,29 @@ let handler = async (m, { conn, text, command }) => {
         birth: null,
         bio: null
       }
-      saveJSON(perfilesPath, perfiles)
     }
 
     let user = perfiles[jid]
 
-    if (m.isGroup && !user.joinGroup) {
+    if (m.isGroup && !user.joinGroup)
       user.joinGroup = Date.now()
-      saveJSON(perfilesPath, perfiles)
-    }
 
     // =====================
-    // OWNER
+    // OWNER CHECK
     // =====================
 
     const senderNumber = jid.replace(/[^0-9]/g, '')
+
     const ownerNumbers = (global.owner || []).map(v => {
       if (Array.isArray(v)) v = v[0]
       return String(v).replace(/[^0-9]/g, '')
     })
+
     const isRealOwner = ownerNumbers.includes(senderNumber)
+    const isAdmin = m.isAdmin || false
 
     // =====================
-    // ADMIN
-    // =====================
-
-    let isAdmin = m.isAdmin || false
-
-    // =====================
-    // FUNCIONES FECHA
+    // FUNCIONES
     // =====================
 
     const calcularEdad = (fecha) => {
@@ -84,9 +82,11 @@ let handler = async (m, { conn, text, command }) => {
       const nacimiento = new Date(a, m - 1, d)
       const hoy = new Date()
       let edad = hoy.getFullYear() - nacimiento.getFullYear()
-      const diff = hoy.getMonth() - nacimiento.getMonth()
-      if (diff < 0 || (diff === 0 && hoy.getDate() < nacimiento.getDate()))
-        edad--
+      if (
+        hoy.getMonth() < nacimiento.getMonth() ||
+        (hoy.getMonth() === nacimiento.getMonth() &&
+          hoy.getDate() < nacimiento.getDate())
+      ) edad--
       return edad
     }
 
@@ -99,33 +99,41 @@ let handler = async (m, { conn, text, command }) => {
       return Math.ceil((cumple - hoy) / 86400000)
     }
 
-    // =====================
-    // DETECTAR PAREJA
-    // =====================
+    const obtenerZodiaco = (fecha) => {
+      const [d, m] = fecha.split('/').map(Number)
+      if (!d || !m) return null
 
-    let estadoAmor = '💔 Soltero'
-    let parejaTag = ''
+      const signos = [
+        { nombre: 'Capricornio ♑', elemento: '🌍 Tierra' },
+        { nombre: 'Acuario ♒', elemento: '🌪️ Aire' },
+        { nombre: 'Piscis ♓', elemento: '💧 Agua' },
+        { nombre: 'Aries ♈', elemento: '🔥 Fuego' },
+        { nombre: 'Tauro ♉', elemento: '🌍 Tierra' },
+        { nombre: 'Géminis ♊', elemento: '🌪️ Aire' },
+        { nombre: 'Cáncer ♋', elemento: '💧 Agua' },
+        { nombre: 'Leo ♌', elemento: '🔥 Fuego' },
+        { nombre: 'Virgo ♍', elemento: '🌍 Tierra' },
+        { nombre: 'Libra ♎', elemento: '🌪️ Aire' },
+        { nombre: 'Escorpio ♏', elemento: '💧 Agua' },
+        { nombre: 'Sagitario ♐', elemento: '🔥 Fuego' }
+      ]
 
-    if (parejas[jid]) {
-      const data = parejas[jid]
+      let index = 0
 
-      if (data.jid) {
-        const parejaJid = data.jid
-        const tipo = data.tipo || 'novios'
+      if ((m === 1 && d >= 20) || (m === 2 && d <= 18)) index = 1
+      else if ((m === 2 && d >= 19) || (m === 3 && d <= 20)) index = 2
+      else if ((m === 3 && d >= 21) || (m === 4 && d <= 19)) index = 3
+      else if ((m === 4 && d >= 20) || (m === 5 && d <= 20)) index = 4
+      else if ((m === 5 && d >= 21) || (m === 6 && d <= 20)) index = 5
+      else if ((m === 6 && d >= 21) || (m === 7 && d <= 22)) index = 6
+      else if ((m === 7 && d >= 23) || (m === 8 && d <= 22)) index = 7
+      else if ((m === 8 && d >= 23) || (m === 9 && d <= 22)) index = 8
+      else if ((m === 9 && d >= 23) || (m === 10 && d <= 22)) index = 9
+      else if ((m === 10 && d >= 23) || (m === 11 && d <= 21)) index = 10
+      else if ((m === 11 && d >= 22) || (m === 12 && d <= 21)) index = 11
 
-        if (tipo === 'casados') {
-          estadoAmor = '💍 Casado(a)'
-        } else {
-          estadoAmor = '❤️ En una relación'
-        }
-
-        parejaTag = `\n💞 Pareja: @${parejaJid.split('@')[0]}`
-      }
+      return signos[index]
     }
-
-    // =====================
-    // TARGET
-    // =====================
 
     const getTarget = () => {
       if (m.mentionedJid?.length) return m.mentionedJid[0]
@@ -134,49 +142,25 @@ let handler = async (m, { conn, text, command }) => {
     }
 
     // =====================
-    // COMANDOS
-    // =====================
-
-    if (command === 'setbr') {
-      if (!text) return m.reply('✏️ Uso:\n.setbr 31/12/1998')
-      user.birth = text.trim()
-      saveJSON(perfilesPath, perfiles)
-      return m.reply('✅ Fecha guardada.')
-    }
-
-    if (command === 'bio') {
-      if (!text) return m.reply('✏️ Uso:\n.bio texto')
-      user.bio = text.trim()
-      saveJSON(perfilesPath, perfiles)
-      return m.reply('✅ Bio guardada.')
-    }
-
-    if (command === 'genero') {
-      if (!text) return m.reply('✏️ Escribe tu género')
-      user.genero = text.trim()
-      saveJSON(perfilesPath, perfiles)
-      return m.reply('✅ Género guardado.')
-    }
-
-    // =====================
     // OTORGAR
     // =====================
 
     if (command === 'otorgar') {
 
-      if (!isRealOwner) return m.reply('❌ Solo los dueños.')
+      if (!isRealOwner) return m.reply('Solo los dueños.')
 
       const target = getTarget()
-      if (!target) return m.reply('✏️ Menciona usuario.')
+      if (!target) return m.reply('Menciona al usuario.')
 
       const nombre = text.replace(/@\d+/g, '').trim()
-      if (!nombre) return m.reply('✏️ Escribe insignia.')
+      if (!nombre) return m.reply('Escribe el nombre de la insignia.')
 
-      if (!perfiles[target])
+      if (!perfiles[target]) {
         perfiles[target] = {
           registered: Date.now(),
           insignias: []
         }
+      }
 
       if (!perfiles[target].insignias)
         perfiles[target].insignias = []
@@ -184,7 +168,7 @@ let handler = async (m, { conn, text, command }) => {
       if (!perfiles[target].insignias.includes(nombre))
         perfiles[target].insignias.push(nombre)
 
-      saveJSON(perfilesPath, perfiles)
+      savePerfiles(perfiles)
 
       return conn.reply(
         m.chat,
@@ -200,99 +184,121 @@ let handler = async (m, { conn, text, command }) => {
 
     if (command === 'quitar') {
 
-      if (!isRealOwner) return m.reply('❌ Solo los dueños.')
+      if (!isRealOwner) return m.reply('Solo los dueños.')
 
       const target = getTarget()
-      if (!target) return m.reply('✏️ Menciona usuario.')
+      if (!target) return m.reply('Menciona al usuario.')
 
       if (!perfiles[target]?.insignias?.length)
-        return m.reply('❌ No tiene insignias.')
+        return m.reply('Ese usuario no tiene insignias.')
 
       perfiles[target].insignias = []
-      saveJSON(perfilesPath, perfiles)
+      savePerfiles(perfiles)
 
-      return m.reply('🗑️ Insignias eliminadas.')
+      return m.reply('Insignias eliminadas.')
     }
 
     // =====================
-    // INSIGNIAS (LISTAR)
+    // INSIGNIAS LISTA
     // =====================
 
     if (command === 'insignias') {
-
-      if (!isRealOwner) return m.reply('❌ Solo los dueños.')
 
       let lista = []
       let mentions = []
 
       for (let id in perfiles) {
         if (perfiles[id].insignias?.length) {
-          lista.push(`👤 @${id.split('@')[0]}\n🏅 ${perfiles[id].insignias.join(', ')}`)
+          lista.push(
+            `👤 @${id.split('@')[0]}\n🏅 ${perfiles[id].insignias.join(', ')}`
+          )
           mentions.push(id)
         }
       }
 
       if (!lista.length)
-        return m.reply('❌ Nadie tiene insignias.')
+        return m.reply('Nadie tiene insignias.')
 
       return conn.reply(
         m.chat,
-        `🏅 *USUARIOS CON INSIGNIAS*\n\n${lista.join('\n\n')}`,
+        `🏅 USUARIOS CON INSIGNIAS\n\n${lista.join('\n\n')}`,
         m,
         { mentions }
       )
     }
 
     // =====================
-    // PERFIL
+    // PERFIL CON FOTO + PAREJA REAL
     // =====================
 
     if (command === 'perfil') {
 
+      let parejaJid = null
+      let parejaTexto = '💔 Sin pareja'
+
+      if (parejas[jid]) {
+
+        if (typeof parejas[jid] === 'string')
+          parejaJid = parejas[jid]
+
+        else if (parejas[jid].jid)
+          parejaJid = parejas[jid].jid
+
+        if (parejaJid)
+          parejaTexto = `💍 Pareja: @${parejaJid.split('@')[0]}`
+      }
+
       const edad = user.birth ? calcularEdad(user.birth) : null
       const dias = user.birth ? diasParaCumple(user.birth) : null
-
-      let rol = 'Usuario 👤'
-      if (isRealOwner) rol = 'Dueño 👑'
-      else if (isAdmin) rol = 'Admin 🛡️'
-
-      let insignias = []
-      if (user.insignias?.length)
-        insignias = user.insignias
-      else
-        insignias = ['Ninguna']
+      const zodiaco = user.birth ? obtenerZodiaco(user.birth) : null
 
       const texto = `
-👤 *PERFIL*
+👤 PERFIL
 
-🆔 @${username}
-⭐ Rol: ${rol}
+@${username}
+
+⭐ Rol: ${isRealOwner ? 'Dueño 👑' : isAdmin ? 'Admin 🛡️' : 'Usuario 👤'}
 
 🏅 Insignias:
-${insignias.join('\n')}
+${user.insignias?.length ? user.insignias.join('\n') : 'Ninguna'}
 
 🚻 Género: ${user.genero || 'No definido'}
-
 🎂 Nacimiento: ${user.birth || 'No registrado'}
 🎉 Edad: ${edad || 'No disponible'}
-🎂 Cumple en: ${dias || 'No disponible'} días
+🎂 Próximo cumple: ${dias || 'No disponible'} días
 
-💖 Estado: ${estadoAmor}${parejaTag}
+♑ Signo: ${zodiaco?.nombre || 'No disponible'}
+🌌 Elemento: ${zodiaco?.elemento || 'No disponible'}
 
-📝 Bio:
-${user.bio || 'Sin biografía'}
+${parejaTexto}
+
+📝 Bio: ${user.bio || 'Sin bio'}
 `.trim()
 
-      await conn.sendMessage(
-        m.chat,
-        { text: texto, mentions: [jid, ...(parejas[jid]?.jid ? [parejas[jid].jid] : [])] },
-        { quoted: m }
-      )
+      savePerfiles(perfiles)
+
+      let pp = null
+      try {
+        pp = await conn.profilePictureUrl(jid, 'image')
+      } catch {}
+
+      const mentions = [jid]
+      if (parejaJid) mentions.push(parejaJid)
+
+      if (pp) {
+        return conn.sendMessage(
+          m.chat,
+          { image: { url: pp }, caption: texto, mentions },
+          { quoted: m }
+        )
+      } else {
+        return conn.reply(m.chat, texto, m, { mentions })
+      }
     }
 
   } catch (e) {
     console.error(e)
-    m.reply('❌ Error en perfil.')
+    m.reply('Error en perfil.')
   }
 }
 
