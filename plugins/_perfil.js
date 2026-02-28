@@ -25,10 +25,6 @@ const savePerfiles = (data) =>
 
 const loadParejas = () => JSON.parse(fs.readFileSync(parejasFile))
 
-// =====================
-// HANDLER
-// =====================
-
 let handler = async (m, { conn, text, command }) => {
   try {
 
@@ -73,7 +69,7 @@ let handler = async (m, { conn, text, command }) => {
     const isAdmin = m.isAdmin || false
 
     // =====================
-    // FUNCIONES GENERALES
+    // FUNCIONES
     // =====================
 
     const calcularEdad = (fecha) => {
@@ -139,9 +135,7 @@ let handler = async (m, { conn, text, command }) => {
       if (!fecha) return null
       const inicio = new Date(fecha)
       const hoy = new Date()
-      const diff = hoy - inicio
-      const dias = Math.floor(diff / 86400000)
-      return dias
+      return Math.floor((hoy - inicio) / 86400000)
     }
 
     const getTarget = () => {
@@ -151,7 +145,85 @@ let handler = async (m, { conn, text, command }) => {
     }
 
     // =====================
-    // PERFIL
+    // SETBR
+    // =====================
+
+    if (command === 'setbr') {
+      if (!text) return m.reply('Usa: .setbr DD/MM/AAAA')
+      user.birth = text.trim()
+      savePerfiles(perfiles)
+      return m.reply('🎂 Fecha guardada.')
+    }
+
+    // =====================
+    // BIO
+    // =====================
+
+    if (command === 'bio') {
+      if (!text) return m.reply('Escribe tu bio.')
+      user.bio = text.trim()
+      savePerfiles(perfiles)
+      return m.reply('📝 Bio actualizada.')
+    }
+
+    // =====================
+    // GENERO
+    // =====================
+
+    if (command === 'genero') {
+      if (!text) return m.reply('Ejemplo: .genero Hombre')
+      user.genero = text.trim()
+      savePerfiles(perfiles)
+      return m.reply('🚻 Género actualizado.')
+    }
+
+    // =====================
+    // OTORGAR INSIGNIA (OWNER)
+    // =====================
+
+    if (command === 'otorgar') {
+      if (!isRealOwner) return m.reply('❌ Solo el owner.')
+      const target = getTarget()
+      if (!target) return m.reply('Menciona a alguien.')
+      const insignia = text.replace(/@\d+/g, '').trim()
+      if (!insignia) return m.reply('Escribe la insignia.')
+
+      if (!perfiles[target]) perfiles[target] = { insignias: [] }
+      perfiles[target].insignias.push(insignia)
+
+      savePerfiles(perfiles)
+      return m.reply('🏅 Insignia otorgada.')
+    }
+
+    // =====================
+    // QUITAR INSIGNIAS (OWNER)
+    // =====================
+
+    if (command === 'quitar') {
+      if (!isRealOwner) return m.reply('❌ Solo el owner.')
+      const target = getTarget()
+      if (!target) return m.reply('Menciona a alguien.')
+
+      if (perfiles[target]) perfiles[target].insignias = []
+
+      savePerfiles(perfiles)
+      return m.reply('🗑️ Insignias eliminadas.')
+    }
+
+    // =====================
+    // VER INSIGNIAS
+    // =====================
+
+    if (command === 'insignias') {
+      return m.reply(
+        user.insignias?.length
+          ? `🏅 Tus insignias:\n${user.insignias.join('\n')}`
+          : 'No tienes insignias.'
+      )
+    }
+
+    // =====================
+    // PERFIL (PAREJAS INTACTO)
     // =====================
 
     if (command === 'perfil') {
@@ -184,7 +256,7 @@ ${estado}
       const dias = user.birth ? diasParaCumple(user.birth) : null
       const zodiaco = user.birth ? obtenerZodiaco(user.birth) : null
 
-      const texto = `
+      const textoPerfil = `
 👤 PERFIL
 
 @${username}
@@ -220,11 +292,11 @@ ${parejaTexto}
       if (pp) {
         return conn.sendMessage(
           m.chat,
-          { image: { url: pp }, caption: texto, mentions },
+          { image: { url: pp }, caption: textoPerfil, mentions },
           { quoted: m }
         )
       } else {
-        return conn.reply(m.chat, texto, m, { mentions })
+        return conn.reply(m.chat, textoPerfil, m, { mentions })
       }
     }
 
