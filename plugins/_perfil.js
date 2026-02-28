@@ -1,4 +1,4 @@
-// 📂 plugins/perfil.js — PERFIL FelixCat 🐾 ZODIACO PRO + GENERO LIBRE (FIXED)
+// 📂 plugins/perfil.js — PERFIL FelixCat 🐾 ULTRA FIX
 
 let handler = async (m, { conn, text, command }) => {
   try {
@@ -28,22 +28,21 @@ let handler = async (m, { conn, text, command }) => {
     }
 
     let user = global.db.data.users[jid]
-
-    if (!user.insignias) user.insignias = []
+    if (!Array.isArray(user.insignias)) user.insignias = []
 
     if (m.isGroup && !user.joinGroup) {
       user.joinGroup = Date.now()
     }
 
     // =====================
-    // OWNER
+    // OWNER FIX DEFINITIVO
     // =====================
 
-    const senderNumber = jid.replace(/[^0-9]/g, '')
+    const senderNumber = jid.split('@')[0]
 
     const ownerNumbers = (global.owner || []).map(v => {
       if (Array.isArray(v)) v = v[0]
-      return String(v).replace(/[^0-9]/g, '')
+      return String(v).split('@')[0]
     })
 
     const isRealOwner = ownerNumbers.includes(senderNumber)
@@ -94,10 +93,6 @@ let handler = async (m, { conn, text, command }) => {
       if (cumple < hoy) cumple.setFullYear(hoy.getFullYear() + 1)
       return Math.ceil((cumple - hoy) / 86400000)
     }
-
-    // =====================
-    // SIGNO ZODIACAL
-    // =====================
 
     const obtenerZodiaco = (fecha) => {
       const [d, m] = fecha.split('/').map(Number)
@@ -176,7 +171,7 @@ let handler = async (m, { conn, text, command }) => {
         global.db.data.users[target] = { insignias: [] }
       }
 
-      if (!global.db.data.users[target].insignias) {
+      if (!Array.isArray(global.db.data.users[target].insignias)) {
         global.db.data.users[target].insignias = []
       }
 
@@ -220,14 +215,16 @@ ${antes}`,
     }
 
     if (command === 'verinsignias') {
-      if (!isRealOwner) return m.reply('❌ Solo los dueños.')
+      if (!isRealOwner)
+        return m.reply('❌ Solo los dueños.')
 
+      let users = global.db.data.users
       let lista = []
       let mentions = []
 
-      for (let id in global.db.data.users) {
-        let u = global.db.data.users[id]
-        if (u?.insignias?.length) {
+      for (let id of Object.keys(users)) {
+        let u = users[id]
+        if (Array.isArray(u?.insignias) && u.insignias.length > 0) {
           lista.push(`👤 @${id.split('@')[0]}\n🏅 ${u.insignias.join(', ')}`)
           mentions.push(id)
         }
@@ -236,12 +233,10 @@ ${antes}`,
       if (!lista.length)
         return m.reply('❌ Nadie tiene insignias.')
 
-      return conn.reply(
-        m.chat,
-        `🏅 *USUARIOS CON INSIGNIAS*\n\n${lista.join('\n\n')}`,
-        m,
-        { mentions }
-      )
+      return conn.sendMessage(m.chat, {
+        text: `🏅 *USUARIOS CON INSIGNIAS*\n\n${lista.join('\n\n')}`,
+        mentions
+      }, { quoted: m })
     }
 
     if (command === 'perfil') {
@@ -265,7 +260,7 @@ ${antes}`,
       if (isRealOwner) insignias.push('👑 Dueño')
       else if (isAdmin) insignias.push('🛡️ Admin')
 
-      if (user.insignias?.length)
+      if (user.insignias.length)
         insignias.push(...user.insignias)
 
       if (!insignias.length) insignias.push('Ninguna')
