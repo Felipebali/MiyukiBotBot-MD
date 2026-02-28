@@ -1,4 +1,4 @@
-// 📂 plugins/perfil.js — PERFIL FelixCat 🐾 ZODIACO PRO + FOTO + PAREJA REAL
+// 📂 plugins/perfil.js — PERFIL FelixCat 🐾 ZODIACO PRO + FOTO + SISTEMA REAL DE PAREJAS
 
 import fs from 'fs'
 import path from 'path'
@@ -39,7 +39,7 @@ let handler = async (m, { conn, text, command }) => {
     const username = jid.split('@')[0]
 
     // =====================
-    // CREAR PERFIL SI NO EXISTE
+    // CREAR PERFIL
     // =====================
 
     if (!perfiles[jid]) {
@@ -73,7 +73,7 @@ let handler = async (m, { conn, text, command }) => {
     const isAdmin = m.isAdmin || false
 
     // =====================
-    // FUNCIONES
+    // FUNCIONES GENERALES
     // =====================
 
     const calcularEdad = (fecha) => {
@@ -135,6 +135,15 @@ let handler = async (m, { conn, text, command }) => {
       return signos[index]
     }
 
+    const tiempoJuntos = (fecha) => {
+      if (!fecha) return null
+      const inicio = new Date(fecha)
+      const hoy = new Date()
+      const diff = hoy - inicio
+      const dias = Math.floor(diff / 86400000)
+      return dias
+    }
+
     const getTarget = () => {
       if (m.mentionedJid?.length) return m.mentionedJid[0]
       if (m.quoted?.sender) return m.quoted.sender
@@ -142,110 +151,33 @@ let handler = async (m, { conn, text, command }) => {
     }
 
     // =====================
-    // OTORGAR
-    // =====================
-
-    if (command === 'otorgar') {
-
-      if (!isRealOwner) return m.reply('Solo los dueños.')
-
-      const target = getTarget()
-      if (!target) return m.reply('Menciona al usuario.')
-
-      const nombre = text.replace(/@\d+/g, '').trim()
-      if (!nombre) return m.reply('Escribe el nombre de la insignia.')
-
-      if (!perfiles[target]) {
-        perfiles[target] = {
-          registered: Date.now(),
-          insignias: []
-        }
-      }
-
-      if (!perfiles[target].insignias)
-        perfiles[target].insignias = []
-
-      if (!perfiles[target].insignias.includes(nombre))
-        perfiles[target].insignias.push(nombre)
-
-      savePerfiles(perfiles)
-
-      return conn.reply(
-        m.chat,
-        `🏅 Insignia otorgada\n👤 @${target.split('@')[0]}\n🎖️ ${nombre}`,
-        m,
-        { mentions: [target] }
-      )
-    }
-
-    // =====================
-    // QUITAR
-    // =====================
-
-    if (command === 'quitar') {
-
-      if (!isRealOwner) return m.reply('Solo los dueños.')
-
-      const target = getTarget()
-      if (!target) return m.reply('Menciona al usuario.')
-
-      if (!perfiles[target]?.insignias?.length)
-        return m.reply('Ese usuario no tiene insignias.')
-
-      perfiles[target].insignias = []
-      savePerfiles(perfiles)
-
-      return m.reply('Insignias eliminadas.')
-    }
-
-    // =====================
-    // INSIGNIAS LISTA
-    // =====================
-
-    if (command === 'insignias') {
-
-      let lista = []
-      let mentions = []
-
-      for (let id in perfiles) {
-        if (perfiles[id].insignias?.length) {
-          lista.push(
-            `👤 @${id.split('@')[0]}\n🏅 ${perfiles[id].insignias.join(', ')}`
-          )
-          mentions.push(id)
-        }
-      }
-
-      if (!lista.length)
-        return m.reply('Nadie tiene insignias.')
-
-      return conn.reply(
-        m.chat,
-        `🏅 USUARIOS CON INSIGNIAS\n\n${lista.join('\n\n')}`,
-        m,
-        { mentions }
-      )
-    }
-
-    // =====================
-    // PERFIL CON FOTO + PAREJA REAL
+    // PERFIL
     // =====================
 
     if (command === 'perfil') {
 
-      let parejaJid = null
       let parejaTexto = '💔 Sin pareja'
+      let parejaJid = null
 
       if (parejas[jid]) {
 
-        if (typeof parejas[jid] === 'string')
-          parejaJid = parejas[jid]
+        const data = parejas[jid]
+        parejaJid = data.pareja
 
-        else if (parejas[jid].jid)
-          parejaJid = parejas[jid].jid
+        const estado = data.estado === 'casados'
+          ? '💍 Casados'
+          : '❤️ Novios'
 
-        if (parejaJid)
-          parejaTexto = `💍 Pareja: @${parejaJid.split('@')[0]}`
+        const diasRelacion = tiempoJuntos(
+          data.matrimonioFecha || data.relacionFecha
+        )
+
+        parejaTexto = `
+${estado}
+💞 Pareja: @${parejaJid.split('@')[0]}
+🔥 Amor: ${data.amor || 0}%
+⏳ Tiempo juntos: ${diasRelacion || 0} días
+`.trim()
       }
 
       const edad = user.birth ? calcularEdad(user.birth) : null
