@@ -234,10 +234,13 @@ Ahora están oficialmente casados 💖`),
       m, { mentions: [sender, proposer] })
   }
 
-  /* 💔 TERMINAR */
+  /* 💔 TERMINAR (solo novios) */
   if (command === 'terminar') {
     const user = getUser(sender)
     if (!user.pareja) return m.reply('❌ No tienes pareja.')
+
+    if (user.matrimonioFecha)
+      return m.reply('❌ Están casados, usa .divorciar para separarse.')
 
     const exId = user.pareja
     const pareja = getUser(exId)
@@ -248,8 +251,6 @@ Ahora están oficialmente casados 💖`),
     pareja.estado = 'soltero'
     user.relacionFecha = null
     pareja.relacionFecha = null
-    user.matrimonioFecha = null
-    pareja.matrimonioFecha = null
     user.amor = 0
     pareja.amor = 0
 
@@ -262,7 +263,7 @@ Ahora ambos están solteros.`),
       m, { mentions: [sender, exId] })
   }
 
-  /* 💔 DIVORCIAR */
+  /* 💔 DIVORCIAR (solo casados) */
   if (command === 'divorciar') {
     const user = getUser(sender)
     if (!user.matrimonioFecha) return m.reply('❌ No estás casado.')
@@ -285,7 +286,6 @@ Siguen siendo novios.`),
 
   /* 💕 INTERACCIONES CON PROTECCIÓN MEJORADA */
   if (['besar','abrazar','amor'].includes(command)) {
-
     const user = getUser(sender)
     const target = getTarget()
     if (!target) return m.reply('💌 Menciona o responde a alguien.')
@@ -331,7 +331,6 @@ Nuevo nivel de amor: ❤️ ${user.amor}`),
 
   /* 👑 LISTAPAREJA */
   if (command === 'listapareja') {
-
     if (!ownersJid.includes(sender))
       return m.reply('❌ Solo el dueño.')
 
@@ -359,7 +358,6 @@ Amor: ❤️ ${user.amor}
 
   /* 🧹 CLEARSHIP */
   if (command === 'clearship') {
-
     if (!ownersJid.includes(sender))
       return m.reply('❌ Solo el dueño.')
 
