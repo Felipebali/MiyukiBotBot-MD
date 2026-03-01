@@ -177,7 +177,7 @@ let handler = async (m, { conn, text, command }) => {
       if (!perfiles[target]) perfiles[target] = { insignias: [] }
       perfiles[target].insignias.push(insignia)
       savePerfiles(perfiles)
-      return m.reply('🏅 Insignia otorgada.')
+      return m.reply(`🏅 Insignia "${insignia}" otorgada a @${target.split('@')[0]}.`, { mentions: [target] })
     }
 
     // QUITAR INSIGNIAS
@@ -187,16 +187,17 @@ let handler = async (m, { conn, text, command }) => {
       if (!target) return m.reply('Menciona a alguien.')
       if (perfiles[target]) perfiles[target].insignias = []
       savePerfiles(perfiles)
-      return m.reply('🗑️ Insignias eliminadas.')
+      return m.reply(`🗑️ Todas las insignias de @${target.split('@')[0]} han sido eliminadas.`, { mentions: [target] })
     }
 
-    // VER INSIGNIAS
+    // VER INSIGNIAS DE TODOS
     if (command === 'insignias') {
+      const todos = Object.entries(perfiles)
+        .filter(([_, u]) => u.insignias?.length)
+        .map(([jid, u]) => `@${jid.split('@')[0]}: ${u.insignias.join(', ')}`)
       return m.reply(
-        user.insignias?.length
-          ? `🏅 Tus insignias:\n${user.insignias.join('\n')}`
-          : 'No tienes insignias.'
-      )
+        todos.length ? `🏅 Insignias de usuarios:\n${todos.join('\n')}` : 'No hay usuarios con insignias.'
+      , { mentions: Object.keys(perfiles).filter(j => perfiles[j].insignias?.length) })
     }
 
     // PERFIL
