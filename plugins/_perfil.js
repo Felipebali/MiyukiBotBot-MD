@@ -1,4 +1,4 @@
-// 📂 plugins/perfil.js — PERFIL FelixCat 🐾 ZODIACO PRO + FOTO + SISTEMA REAL DE PAREJAS
+// 📂 plugins/perfil.js — PERFIL FelixCat 🐾 ZODIACO PRO + FOTO + SISTEMA REAL DE PAREJAS + ESTADO
 
 import fs from 'fs'
 import path from 'path'
@@ -102,12 +102,6 @@ let handler = async (m, { conn, text, command }) => {
     const isRealOwner = ownerNumbers.includes(senderNumber)
     const isAdmin = m.isAdmin || false
 
-    const getTarget = () => {
-      if (m.mentionedJid?.length) return m.mentionedJid[0]
-      if (m.quoted?.sender) return m.quoted.sender
-      return null
-    }
-
     // =====================
     // BIO
     // =====================
@@ -147,14 +141,25 @@ let handler = async (m, { conn, text, command }) => {
 
     if (command === 'perfil') {
 
-      let parejaTexto = '💔 Sin pareja'
-      let parejaJid = null
+      let estadoTexto = '💔 Estado: Soltero/a'
+      let parejaTexto = ''
       let amorTexto = ''
       let tiempoTexto = ''
+      let parejaJid = null
 
       const data = parejas[jid]
+
       if (data?.pareja) {
         parejaJid = data.pareja
+
+        const estado = data.estado || 'novios'
+
+        if (estado === 'casados') {
+          estadoTexto = '💍 Estado: Casado/a'
+        } else {
+          estadoTexto = '💑 Estado: De novio/a'
+        }
+
         parejaTexto = `❤️ Pareja: @${parejaJid.split('@')[0]}`
         amorTexto = `💖 Amor: ${data.amor || 0}`
         tiempoTexto = `⏳ Tiempo juntos: ${tiempoRelacion(data.relacionFecha)}`
@@ -170,6 +175,11 @@ let handler = async (m, { conn, text, command }) => {
 
 ⭐ Rol: ${isRealOwner ? 'Dueño 👑' : isAdmin ? 'Admin 🛡️' : 'Usuario 👤'}
 
+${estadoTexto}
+${parejaTexto}
+${amorTexto}
+${tiempoTexto}
+
 🏅 Insignias:
 ${user.insignias?.length ? user.insignias.join('\n') : 'Ninguna'}
 
@@ -177,10 +187,6 @@ ${user.insignias?.length ? user.insignias.join('\n') : 'Ninguna'}
 🎂 Nacimiento: ${user.birth || 'No registrado'}
 ${edad ? `🎉 Edad: ${edad}` : ''}
 ${signo ? `🔮 Signo: ${signo}` : ''}
-
-${parejaTexto}
-${amorTexto}
-${tiempoTexto}
 
 📝 Bio: ${user.bio || 'Sin bio'}
 `.trim()
