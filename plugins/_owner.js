@@ -4,7 +4,7 @@ let handler = async (m, { conn }) => {
     return m.reply("❌ No hay owners configurados.");
   }
 
-  const owners = global.owner.slice(0, 4);
+  const owners = global.owner.slice(0, 3);
 
   let texto = `👑 *OWNERS DEL BOT* 👑\n\n`;
   let mentions = [];
