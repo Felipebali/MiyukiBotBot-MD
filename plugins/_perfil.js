@@ -190,14 +190,21 @@ let handler = async (m, { conn, text, command }) => {
       return m.reply(`🗑️ Todas las insignias de @${target.split('@')[0]} han sido eliminadas.`, { mentions: [target] })
     }
 
-    // VER INSIGNIAS DE TODOS
+    // VER INSIGNIAS DE TODOS — CORREGIDO
     if (command === 'insignias') {
-      const todos = Object.entries(perfiles)
+      const usuariosConInsignias = Object.entries(perfiles)
         .filter(([_, u]) => u.insignias?.length)
+
+      if (!usuariosConInsignias.length) 
+        return m.reply('No hay usuarios con insignias.')
+
+      const texto = usuariosConInsignias
         .map(([jid, u]) => `@${jid.split('@')[0]}: ${u.insignias.join(', ')}`)
-      return m.reply(
-        todos.length ? `🏅 Insignias de usuarios:\n${todos.join('\n')}` : 'No hay usuarios con insignias.'
-      , { mentions: Object.keys(perfiles).filter(j => perfiles[j].insignias?.length) })
+        .join('\n')
+
+      const mentions = usuariosConInsignias.map(([jid]) => jid)
+
+      return conn.reply(m.chat, `🏅 Insignias de usuarios:\n${texto}`, m, { mentions })
     }
 
     // PERFIL
