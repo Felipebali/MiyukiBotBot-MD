@@ -60,7 +60,7 @@ const signoZodiacal = (fecha) => {
 
 const tiempoRelacion = (fecha) => {
   if (!fecha) return null
-  const diff = Date.now() - fecha
+  const diff = Date.now() - Number(fecha)
   const dias = Math.floor(diff / 86400000)
   return `${dias} día(s)`
 }
@@ -151,7 +151,6 @@ let handler = async (m, { conn, text, command }) => {
 
       if (data?.pareja) {
         parejaJid = data.pareja
-
         const estado = data.estado || 'novios'
 
         estadoTexto =
@@ -194,19 +193,23 @@ ${signo ? `🔮 Signo: ${signo}` : ''}
 
       savePerfiles(perfiles)
 
+      const mentions = [jid]
+      if (parejaJid) mentions.push(parejaJid)
+
       let pp = null
+
       try {
-        pp = await conn.profilePictureUrl(jid, 'image')
+        const url = await conn.profilePictureUrl(jid, 'image')
+        if (url && typeof url === 'string' && url.startsWith('http')) {
+          pp = url
+        }
       } catch {
         pp = null
       }
 
-      const mentions = [jid]
-      if (parejaJid) mentions.push(parejaJid)
-
-      // 🔥 SI TIENE FOTO
+      // ✅ SI TIENE FOTO REAL
       if (pp) {
-        return conn.sendMessage(
+        return await conn.sendMessage(
           m.chat,
           {
             image: { url: pp },
@@ -217,15 +220,8 @@ ${signo ? `🔮 Signo: ${signo}` : ''}
         )
       }
 
-      // 🔥 SI NO TIENE FOTO → SOLO TEXTO
-      return conn.sendMessage(
-        m.chat,
-        {
-          text: textoPerfil,
-          mentions
-        },
-        { quoted: m }
-      )
+      // ✅ SI NO TIENE FOTO → SOLO TEXTO (ULTRA ESTABLE)
+      return await m.reply(textoPerfil, null, { mentions })
     }
 
   } catch (e) {
