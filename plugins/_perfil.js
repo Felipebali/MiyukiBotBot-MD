@@ -154,15 +154,16 @@ let handler = async (m, { conn, text, command }) => {
 
         const estado = data.estado || 'novios'
 
-        if (estado === 'casados') {
-          estadoTexto = '💍 Estado: Casado/a'
-        } else {
-          estadoTexto = '💑 Estado: De novio/a'
-        }
+        estadoTexto =
+          estado === 'casados'
+            ? '💍 Estado: Casado/a'
+            : '💑 Estado: De novio/a'
 
         parejaTexto = `❤️ Pareja: @${parejaJid.split('@')[0]}`
         amorTexto = `💖 Amor: ${data.amor || 0}`
-        tiempoTexto = `⏳ Tiempo juntos: ${tiempoRelacion(data.relacionFecha)}`
+        tiempoTexto = data.relacionFecha
+          ? `⏳ Tiempo juntos: ${tiempoRelacion(data.relacionFecha)}`
+          : ''
       }
 
       const edad = user.birth ? calcularEdad(user.birth) : null
@@ -194,24 +195,37 @@ ${signo ? `🔮 Signo: ${signo}` : ''}
       savePerfiles(perfiles)
 
       let pp = null
-      try { pp = await conn.profilePictureUrl(jid, 'image') } catch {}
+      try {
+        pp = await conn.profilePictureUrl(jid, 'image')
+      } catch {
+        pp = null
+      }
 
       const mentions = [jid]
       if (parejaJid) mentions.push(parejaJid)
 
+      // 🔥 SI TIENE FOTO
       if (pp) {
         return conn.sendMessage(
           m.chat,
-          { image: { url: pp }, caption: textoPerfil, mentions },
-          { quoted: m }
-        )
-      } else {
-        return conn.sendMessage(
-          m.chat,
-          { text: textoPerfil, mentions },
+          {
+            image: { url: pp },
+            caption: textoPerfil,
+            mentions
+          },
           { quoted: m }
         )
       }
+
+      // 🔥 SI NO TIENE FOTO → SOLO TEXTO
+      return conn.sendMessage(
+        m.chat,
+        {
+          text: textoPerfil,
+          mentions
+        },
+        { quoted: m }
+      )
     }
 
   } catch (e) {
