@@ -329,7 +329,7 @@ Nuevo nivel de amor: ❤️ ${user.amor}`),
       m, { mentions: [sender, target] })
   }
 
-  /* 👑 LISTAPAREJA */
+/* 👑 LISTAPAREJA */
   if (command === 'listapareja') {
     if (!ownersJid.includes(sender))
       return m.reply('❌ Solo el dueño.')
@@ -339,21 +339,33 @@ Nuevo nivel de amor: ❤️ ${user.amor}`),
 
     for (let id in db) {
       const user = db[id]
+
       if (user.pareja && id < user.pareja) {
+        const pareja = db[user.pareja]
         const estado = user.matrimonioFecha ? '💍 Casados' : '💑 Novios'
-        texto += `💖 ${tag(id)} ❤️ ${tag(user.pareja)}
+        const tiempoJuntos = user.relacionFecha
+          ? tiempo(ahora - user.relacionFecha)
+          : 'Desconocido'
+
+        texto += `╭─────────────⬣
+💖 ${tag(id)} ❤️ ${tag(user.pareja)}
 Estado: ${estado}
-Amor: ❤️ ${user.amor}
-─────────────\n`
+Tiempo juntos: ${tiempoJuntos}
+Nivel de amor: ❤️ ${user.amor}
+╰─────────────⬣\n\n`
+
         mentions.push(id, user.pareja)
       }
     }
 
     if (!texto) texto = '😿 No hay parejas activas.'
 
-    return conn.reply(m.chat,
-      box('💞 PAREJAS ACTIVAS', texto),
-      m, { mentions })
+    return conn.reply(
+      m.chat,
+      box('💞 PAREJAS ACTIVAS', texto.trim()),
+      m,
+      { mentions }
+    )
   }
 
   /* 🧹 CLEARSHIP */
