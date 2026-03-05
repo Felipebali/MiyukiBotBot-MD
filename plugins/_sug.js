@@ -1,6 +1,6 @@
 // 📦 FelixCat_Bot — Comando .sug (sugerencias con cooldown de 24h)
 const cooldown = {} // Objeto para registrar cuándo cada usuario envió su última sugerencia
-const SUG_GROUP = "120363404509794582@g.us" // ID del grupo donde llegan las sugerencias
+const SUG_GROUP = "120363424550041333@g.us" // ID del grupo donde llegan las sugerencias
 
 let handler = async (m, { conn, text, usedPrefix, command }) => {
   const user = m.sender
