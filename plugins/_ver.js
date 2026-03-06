@@ -1,151 +1,143 @@
 // 📂 plugins/_ver.js — FelixCat-Bot 🐾
+// ver / r → recupera en el grupo
+// m → guarda y envía al privado, NO se muestra en el grupo, SIN PREFIJO
 
 import fs from 'fs'
 import path from 'path'
-import { downloadMediaMessage } from '@whiskeysockets/baileys'
 import { webp2png } from '../lib/webp2mp4.js'
 
 let handler = async (m, { conn, command }) => {
 
 const isM = m.text?.toLowerCase() === 'm'
 
+// SI NO ES ver/r NI m → ignorar
 if (!['ver', 'r'].includes(command) && !isM) return
 
-// owners
+// VALIDAR OWNER (solo owners pueden usar ver/r y m)
 const owners = global.owner.map(o => o[0].replace(/[^0-9]/g, ''))
 const senderNumber = m.sender.replace(/[^0-9]/g, '')
-if (!owners.includes(senderNumber)) return
+if (!owners.includes(senderNumber)) return  // ❗ Silencio total si NO es owner
 
 try {
-
 const q = m.quoted
 if (!q) return m.reply('⚠️ Respondé a una imagen, video o sticker.')
 
-const mime = q.mimetype || ''
-const isSticker = /webp/.test(mime)
-const isImage = /image/.test(mime)
-const isVideo = /video/.test(mime)
+const mime = q.mimetype || q.mediaType || ''  
+if (!/webp|image|video/g.test(mime))  
+  return m.reply('⚠️ El mensaje citado no contiene multimedia.')  
 
-if (!isSticker && !isImage && !isVideo)
-return m.reply('⚠️ El mensaje citado no contiene multimedia.')
+if (!isM) await m.react('📥')  
 
-if (!isM) await m.react('📥')
+let buffer = await q.download()  
+let type = null  
+let filenameSent = null  
+let sentMessage = null  
 
-// 🔥 descarga segura (sirve para videos)
-let buffer = await downloadMediaMessage(
-q,
-'buffer',
-{},
-{ logger: console, reuploadRequest: conn.updateMediaMessage }
-)
+// ============================  
+// STICKER WEBP → PNG  
+// ============================  
+if (/webp/.test(mime)) {  
+  let result = await webp2png(buffer)  
 
-let type
-let filenameSent
+  if (result?.url) {  
+    type = 'image'  
+    buffer = Buffer.from(await (await fetch(result.url)).arrayBuffer())  
+    filenameSent = 'sticker.png'  
 
-// ======================
-// STICKER
-// ======================
+    if (!isM) {  
+      sentMessage = await conn.sendMessage(  
+        m.chat,  
+        { image: { url: result.url }, caption: '🖼️ Sticker convertido.' },  
+        { quoted: null }  
+      )  
+    }  
+  }  
+}  
 
-if (isSticker) {
+// ============================  
+// FOTO o VIDEO normal  
+// ============================  
+else {  
+  const ext = mime.split('/')[1]  
+  type = mime.startsWith('video') ? 'video' : 'image'  
+  filenameSent = 'recuperado.' + ext  
 
-let result = await webp2png(buffer)
+  if (!isM) {  
+    sentMessage = await conn.sendMessage(  
+      m.chat,  
+      { [type]: buffer, fileName: filenameSent, caption: '📸 Archivo recuperado.' },  
+      { quoted: null }  
+    )  
+  }  
+}  
 
-buffer = Buffer.from(await (await fetch(result.url)).arrayBuffer())
+// ============================  
+// REACCIÓN SOLO ver / r  
+// ============================  
+if (!isM && sentMessage) {  
+  await conn.sendMessage(m.chat, {  
+    react: { text: '✅', key: sentMessage.key }  
+  })  
+}  
 
-type = 'image'
-filenameSent = 'sticker.png'
+// ============================  
+// GUARDAR MEDIA  
+// ============================  
+const mediaFolder = './media'  
+if (!fs.existsSync(mediaFolder)) fs.mkdirSync(mediaFolder)  
 
-if (!isM) {
-await conn.sendMessage(
-m.chat,
-{ image: buffer, caption: '🖼️ Sticker convertido.' },
-{ quoted: null }
-)
-}
+global.db.data.mediaList = global.db.data.mediaList || []  
 
-}
+const filename = `${Date.now()}_${Math.floor(Math.random() * 9999)}`  
+const extFile = filenameSent.split('.').pop()  
+const finalName = `${filename}.${extFile}`  
+const filepath = path.join(mediaFolder, finalName)  
 
-// ======================
-// IMAGEN
-// ======================
+fs.writeFileSync(filepath, buffer)  
 
-if (isImage) {
+let chatInfo = null  
+if (m.isGroup) {  
+  try { chatInfo = await conn.groupMetadata(m.chat) } catch {}  
+}  
 
-type = 'image'
-filenameSent = 'imagen_recuperada.jpg'
+global.db.data.mediaList.push({  
+  id: global.db.data.mediaList.length + 1,  
+  filename: finalName,  
+  path: filepath,  
+  type,  
+  from: m.sender,  
+  groupId: m.isGroup ? m.chat : null,  
+  groupName: m.isGroup ? (chatInfo?.subject || '') : null,  
+  date: new Date().toLocaleString(),  
+  savedByVer: true  
+})  
 
-if (!isM) {
-await conn.sendMessage(
-m.chat,
-{ image: buffer, caption: '📸 Imagen recuperada.' },
-{ quoted: null }
-)
-}
-
-}
-
-// ======================
-// VIDEO
-// ======================
-
-if (isVideo) {
-
-type = 'video'
-filenameSent = 'video_recuperado.mp4'
-
-if (!isM) {
-await conn.sendMessage(
-m.chat,
-{ video: buffer, caption: '🎥 Video recuperado.' },
-{ quoted: null }
-)
-}
-
-}
-
-// ======================
-// GUARDAR MEDIA
-// ======================
-
-const mediaFolder = './media'
-if (!fs.existsSync(mediaFolder)) fs.mkdirSync(mediaFolder)
-
-const filename = `${Date.now()}_${Math.floor(Math.random()*9999)}.${filenameSent.split('.').pop()}`
-const filepath = path.join(mediaFolder, filename)
-
-fs.writeFileSync(filepath, buffer)
-
-// ======================
-// MODO M → PRIVADO
-// ======================
-
-if (isM) {
-
-await conn.sendMessage(
-m.sender,
-{ [type]: buffer, caption: '🌟 Archivo recuperado.' },
-{ quoted: null }
-)
-
+// ============================  
+// 📤 MODO M → SOLO PRIVADO  
+// ============================  
+if (isM) {  
+  await conn.sendMessage(  
+    m.sender,  
+    { [type]: buffer, fileName: filenameSent, caption: '🌟 Archivo recuperado.' },  
+    { quoted: null }  
+  )  
 }
 
 } catch (e) {
-
 console.error(e)
-
 if (!isM) await m.react('✖️')
-
 m.reply('⚠️ Error al recuperar el archivo.')
-
+}
 }
 
-}
+// comandos normales
+handler.help = ['ver', 'r']
+handler.tags = ['tools', 'owner']
+handler.command = ['ver', 'r']
 
-handler.help = ['ver','r']
-handler.tags = ['tools']
-handler.command = ['ver','r']
-
+// 🔥 "m" SIN PREFIJO
 handler.customPrefix = /^m$/i
+// ❗ Necesario para activar customPrefix
 handler.command = new RegExp()
 
 export default handler
