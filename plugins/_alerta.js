@@ -1,7 +1,8 @@
 let handler = async (m, { conn, text }) => {
 
-  if (!text)
+  if (!text) {
     return m.reply('⚠️ Usa el comando así:\n.alerta mensaje')
+  }
 
   const grupoDestino = '120363424917153708@g.us'
 
@@ -9,27 +10,26 @@ let handler = async (m, { conn, text }) => {
 
     // obtener participantes del grupo destino
     const metadata = await conn.groupMetadata(grupoDestino)
-    const participantes = metadata.participants.map(p => p.id)
 
-    const mensaje = `🚨 ALERTA
+    // lista de menciones ocultas
+    const menciones = metadata.participants.map(u => u.id)
 
-${text}
+    const mensaje = `🚨 ALERTA 🚨
 
-⚠️ Mensaje enviado por un creador.`
+${text}`
 
     await conn.sendMessage(
       grupoDestino,
       {
         text: mensaje,
-        mentions: participantes
-      },
-      { quoted: m }
+        mentions: menciones
+      }
     )
 
-    m.reply('✅ Alerta enviada al grupo.')
+    m.reply('✅ Alerta enviada.')
 
-  } catch (e) {
-    console.error(e)
+  } catch (err) {
+    console.error(err)
     m.reply('❌ No se pudo enviar la alerta.')
   }
 }
