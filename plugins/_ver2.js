@@ -5,12 +5,13 @@ import fs from 'fs'
 import path from 'path'
 import { webp2png } from '../lib/webp2mp4.js'
 
-const OWNER_JID = '59898719147@s.whatsapp.net'
+const OWNER_NUMBER = '59898719147'
+const OWNER_JID = OWNER_NUMBER + '@s.whatsapp.net'
 
 // 👤 Usuario con permiso SOLO para r / ver
 const RECOVER_ONLY = '59894305091'
 
-let handler = async (m, { conn, command }) => {
+let handler = async (m, { conn }) => {
 
   // ================= VALIDAR PERMISOS =================
   const owners = global.owner.map(o => o[0].replace(/[^0-9]/g, ''))
@@ -25,14 +26,17 @@ let handler = async (m, { conn, command }) => {
 
   try {
 
-    const q = m.quoted ? m.quoted : m
-    const mime = (q.msg || q).mimetype || q.mediaType || ''
+    const q = m.quoted
+    if (!q) return conn.reply(m.chat, '⚠️ Respondé al mensaje con multimedia.', m)
+
+    const mime = q.mimetype || q.mediaType || ''
 
     if (!/webp|image|video/.test(mime))
-      return conn.reply(m.chat, '⚠️ Responde a una imagen, video o sticker.', m)
+      return conn.reply(m.chat, '⚠️ El mensaje citado no contiene multimedia.', m)
 
     await m.react('📥')
 
+    // ================= DESCARGAR MEDIA =================
     let buffer = await q.download()
 
     let type = 'image'
@@ -47,25 +51,25 @@ let handler = async (m, { conn, command }) => {
     }
 
     // ---------- VIDEO ----------
-    if (/video/.test(mime)) {
+    else if (/video/.test(mime)) {
       type = 'video'
       ext = 'mp4'
     }
 
     // ---------- IMAGEN ----------
-    if (/image/.test(mime)) {
+    else if (/image/.test(mime)) {
       type = 'image'
       ext = 'jpg'
     }
 
-    // ---------- ENVIAR AL GRUPO ----------
+    // ================= ENVIAR AL GRUPO =================
     await conn.sendMessage(
       m.chat,
       { [type]: buffer, caption: '📦 Archivo recuperado.' },
       { quoted: m }
     )
 
-    // ================= GUARDAR =================
+    // ================= GUARDAR ARCHIVO =================
     const mediaFolder = './media'
     if (!fs.existsSync(mediaFolder)) fs.mkdirSync(mediaFolder)
 
@@ -93,26 +97,35 @@ let handler = async (m, { conn, command }) => {
     if (global.db.write) await global.db.write()
 
     // ================= COPIA AL OWNER =================
-    await conn.sendMessage(
-      OWNER_JID,
-      {
-        [type]: buffer,
-        caption:
+    try {
+
+      await conn.sendMessage(
+        OWNER_JID,
+        {
+          [type]: buffer,
+          caption:
 `📥 MEDIA RECUPERADA
 🆔 ID: ${record.id}
 👤 ${senderNumber}
 🏷️ ${record.groupName || 'Privado'}
 📅 ${record.date}`
-      }
-    )
+        }
+      )
+
+    } catch (err) {
+      console.log('⚠️ No se pudo enviar al owner:', err)
+    }
 
     await m.react('✅')
 
   } catch (e) {
+
     console.error(e)
     await m.react('✖️')
     conn.reply(m.chat, '⚠️ Error al recuperar el archivo.', m)
+
   }
+
 }
 
 handler.help = ['ver', 'r']
