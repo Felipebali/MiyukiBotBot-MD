@@ -1,60 +1,75 @@
 // 📂 plugins/admins.js
-// Muestra dueños, admins y usuarios especiales
-// ROOT OWNERS reales + ADMINS del grupo
+// Lista dueños del bot + admins del grupo + aviso opcional
 
-let handler = async (m, { conn, isBotAdmin, groupMetadata, isAdmin }) => {
+let handler = async (m, { conn, groupMetadata, isBotAdmin, isAdmin, text }) => {
   try {
     if (!m.isGroup) return m.reply('❗ Este comando solo funciona en grupos.')
     if (!isBotAdmin) return m.reply('❗ Necesito ser admin para ejecutar este comando.')
 
-    // 🔐 ROOT OWNERS reales desde config.js (blindado)
-    const owners = (global.owner || []).map(v => {
-      if (Array.isArray(v)) v = v[0]
-      if (typeof v !== 'string' && typeof v !== 'number') return null
-      return String(v).replace(/[^0-9]/g, '') + '@s.whatsapp.net'
-    }).filter(Boolean)
+    // 🔐 obtener owners reales desde config.js
+    const owners = (global.owner || [])
+      .map(v => {
+        if (Array.isArray(v)) v = v[0]
+        if (!v) return null
+        return String(v).replace(/[^0-9]/g, '') + '@s.whatsapp.net'
+      })
+      .filter(Boolean)
 
     const sender = conn.decodeJid ? conn.decodeJid(m.sender) : m.sender
 
-    // ❌ solo owners o admins
+    // ❌ solo owners o admins pueden usar
     if (!owners.includes(sender) && !isAdmin) {
-      return m.reply('🚫 Solo los administradores o los dueños pueden usar este comando.')
+      return m.reply('🚫 Solo los administradores o dueños del bot pueden usar este comando.')
     }
 
-    const participants = groupMetadata.participants
-      .map(p => ({
-        id: conn.decodeJid ? conn.decodeJid(p.id) : p.id,
-        admin: p.admin
-      }))
-      .filter(p => p.id && p.id !== conn.user.jid)
+    const botJid = conn.user?.id || conn.user?.jid
 
-    // 🧠 separar roles
+    // 👥 participantes del grupo
+    const participants = groupMetadata.participants.map(p => ({
+      id: conn.decodeJid ? conn.decodeJid(p.id) : p.id,
+      admin: p.admin
+    }))
+
+    // 👑 owners que están en el grupo
     const ownersInGroup = participants.filter(p => owners.includes(p.id))
-    const admins = participants.filter(p => p.admin && !owners.includes(p.id))
 
-    // ✨ títulos de owners
+    // 🛡️ admins del grupo
+    const admins = participants.filter(p => p.admin && !owners.includes(p.id) && p.id !== botJid)
+
+    // 👤 rol del que ejecuta
+    const role = owners.includes(sender) ? '👑 Owner del Bot' : '🛡️ Administrador'
+
+    // 👑 títulos
     const ownerTitles = {
       [owners[0]]: 'Dueño Principal 👑',
       [owners[1]]: 'Creador Asociado 👑'
     }
 
-    let texto = `👥 *Administración del Grupo*\n\n`
+    let msg = `╭━━━〔 👥 *ADMINISTRACIÓN* 〕━━━⬣\n\n`
 
     if (ownersInGroup.length) {
-      texto += `👑 *Dueños del Bot:*\n`
-      texto += ownersInGroup
-        .map(o => `${ownerTitles[o.id] || 'Dueño'} @${o.id.split('@')[0]}`)
+      msg += `👑 *Dueños del Bot*\n`
+      msg += ownersInGroup
+        .map(o => `▸ ${ownerTitles[o.id] || 'Dueño'} @${o.id.split('@')[0]}`)
         .join('\n')
-      texto += `\n\n`
+      msg += `\n\n`
     }
 
-    texto += `🛡️ *Administradores:*\n`
-    texto += admins.length
-      ? admins.map(a => `• @${a.id.split('@')[0]}`).join('\n')
-      : 'Ninguno'
-    texto += `\n\n`
+    msg += `🛡️ *Admins del Grupo*\n`
+    msg += admins.length
+      ? admins.map(a => `▸ @${a.id.split('@')[0]}`).join('\n')
+      : '▸ Ninguno'
+    msg += `\n\n`
 
-    texto += `✅ *Comando ejecutado por:* @${sender.split('@')[0]}`
+    // 📢 aviso opcional
+    if (text) {
+      msg += `📢 *Aviso para administradores*\n`
+      msg += `💬 ${text}\n\n`
+    }
+
+    msg += `╰━━━━━━━━━━━━━━━━⬣\n`
+    msg += `⚡ Ejecutado por: @${sender.split('@')[0]}\n`
+    msg += `🎖️ Rol: ${role}`
 
     const mentions = [
       sender,
@@ -64,7 +79,7 @@ let handler = async (m, { conn, isBotAdmin, groupMetadata, isAdmin }) => {
 
     await conn.sendMessage(
       m.chat,
-      { text: texto, mentions },
+      { text: msg, mentions },
       { quoted: m }
     )
 
@@ -76,6 +91,6 @@ let handler = async (m, { conn, isBotAdmin, groupMetadata, isAdmin }) => {
 handler.command = ['admins']
 handler.group = true
 handler.tags = ['group']
-handler.help = ['admins']
+handler.help = ['admins', 'admins <aviso>']
 
 export default handler
