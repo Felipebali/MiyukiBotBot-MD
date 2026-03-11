@@ -1,4 +1,4 @@
-// 🔹 handler hermanos completo — FELI 2026 PRO
+// 🔹 handler hermanos completo — FELI 2026 PRO (FIXED)
 
 import fs from 'fs'
 import path from 'path'
@@ -29,18 +29,19 @@ let handler = async (m, { conn, command }) => {
   const ahora = Date.now()
   const ownersJid = getOwnersJid()
 
+  // 🔧 FIX: asegura que los campos siempre existan
   const getUser = (id) => {
-    if (!db[id]) {
-      db[id] = {
-        hermano: null,
-        propuesta: null,
-        propuestaFecha: null,
-        hermandadFecha: null,
-        nivel: 0,
-        interacciones: 0,
-        cooldown: 0
-      }
-    }
+
+    if (!db[id]) db[id] = {}
+
+    if (!('hermano' in db[id])) db[id].hermano = null
+    if (!('propuesta' in db[id])) db[id].propuesta = null
+    if (!('propuestaFecha' in db[id])) db[id].propuestaFecha = null
+    if (!('hermandadFecha' in db[id])) db[id].hermandadFecha = null
+    if (!('nivel' in db[id])) db[id].nivel = 0
+    if (!('interacciones' in db[id])) db[id].interacciones = 0
+    if (!('cooldown' in db[id])) db[id].cooldown = 0
+
     return db[id]
   }
 
@@ -55,10 +56,10 @@ let handler = async (m, { conn, command }) => {
   const fechaBonita = (ms) => {
     if (!ms) return 'Desconocida'
     const d = new Date(ms)
-    return d.toLocaleDateString('es-ES', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
+    return d.toLocaleDateString('es-ES',{
+      day:'2-digit',
+      month:'2-digit',
+      year:'numeric'
     })
   }
 
@@ -77,10 +78,7 @@ let handler = async (m, { conn, command }) => {
     return false
   }
 
-  // ======================
-  // 🤝 PROPUESTA HERMANO
-  // ======================
-
+  // 🤝 PROPUESTA
   if (command === 'hermano') {
 
     const target = getTarget()
@@ -112,10 +110,7 @@ Responde:
 m,{mentions:[sender,target]})
   }
 
-  // ======================
-  // 👀 VER HERMANO
-  // ======================
-
+  // 👀 VER
   if (command === 'verhermano') {
 
     const target = getTarget() || sender
@@ -138,14 +133,11 @@ ${tag(target)} 🤝 ${tag(user.hermano)}
 
 💪 Nivel: ${user.nivel}
 🏅 Rango: ${rango(user.nivel)}
-🎮 Interacciones: ${user.interacciones}`,
+🎮 Interacciones: ${user.interacciones || 0}`,
 m,{mentions:[target,user.hermano]})
   }
 
-  // ======================
   // ✅ ACEPTAR
-  // ======================
-
   if (command === 'aceptarhermano') {
 
     const user = getUser(sender)
@@ -174,10 +166,7 @@ ${tag(sender)} 🤝 ${tag(proposer)}
 m,{mentions:[sender,proposer]})
   }
 
-  // ======================
   // ❌ RECHAZAR
-  // ======================
-
   if (command === 'rechazarhermano') {
 
     const user = getUser(sender)
@@ -193,10 +182,7 @@ m,{mentions:[sender,proposer]})
 m,{mentions:[sender,proposer]})
   }
 
-  // ======================
   // 💔 ROMPER
-  // ======================
-
   if (command === 'romperhermandad') {
 
     const user = getUser(sender)
@@ -214,6 +200,9 @@ m,{mentions:[sender,proposer]})
     user.nivel = 0
     bro.nivel = 0
 
+    user.interacciones = 0
+    bro.interacciones = 0
+
     saveDB(db)
 
     return conn.reply(m.chat,
@@ -221,10 +210,7 @@ m,{mentions:[sender,proposer]})
 m,{mentions:[sender,broId]})
   }
 
-  // ======================
   // 🤜 INTERACCIONES
-  // ======================
-
   if ([
     'abrazohermano',
     'proteger',
@@ -281,7 +267,7 @@ ${tag(sender)} 🤝 ${tag(user.hermano)}
 
 💪 Nivel: ${user.nivel}
 🏅 Rango: ${rango(user.nivel)}
-🎮 Interacciones: ${user.interacciones}`,
+🎮 Interacciones: ${user.interacciones || 0}`,
 m,{mentions:[sender,user.hermano]})
     }
 
@@ -298,10 +284,7 @@ m,{mentions:[sender,user.hermano]})
 m,{mentions:[sender,user.hermano]})
   }
 
-  // ======================
-  // 🏆 TOP HERMANOS
-  // ======================
-
+  // 🏆 TOP
   if (command === 'tophermanos') {
 
     if (!ownersJid.includes(sender))
@@ -324,8 +307,7 @@ ${tag(id)} 🧬 ${tag(u.hermano)}
 
 `
 
-      mentions.push(id, u.hermano)
-
+      mentions.push(id,u.hermano)
     })
 
     if (!mentions.length)
@@ -334,10 +316,7 @@ ${tag(id)} 🧬 ${tag(u.hermano)}
     return conn.reply(m.chat, txt.trim(), m, { mentions })
   }
 
-  // ======================
-  // 📜 LISTA HERMANOS
-  // ======================
-
+  // 📜 LISTA
   if (command === 'listahermanos') {
 
     if (!ownersJid.includes(sender))
@@ -367,10 +346,7 @@ ${tag(id)} 🧬 ${tag(u.hermano)}
     return conn.reply(m.chat, texto.trim(), m, { mentions })
   }
 
-  // ======================
   // 🧹 CLEAR
-  // ======================
-
   if (command === 'clearbro') {
 
     if (!ownersJid.includes(sender))
@@ -387,7 +363,6 @@ ${tag(id)} 🧬 ${tag(u.hermano)}
         interacciones: 0,
         cooldown: 0
       }
-
     }
 
     saveDB(db)
