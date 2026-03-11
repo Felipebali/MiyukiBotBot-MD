@@ -1,4 +1,5 @@
 // 🔹 handler hermanos completo — FELI 2026 PRO
+
 import fs from 'fs'
 import path from 'path'
 
@@ -153,8 +154,8 @@ m,{mentions:[sender,proposer]})
     if (!user.propuesta) return m.reply('💭 No tienes propuestas.')
 
     const proposer = user.propuesta
-
     user.propuesta = null
+
     saveDB(db)
 
     return conn.reply(m.chat,
@@ -268,34 +269,7 @@ m,{mentions:[sender,user.hermano]})
   }
 
   // ======================
-  // 👀 VER HERMANO (OWNER)
-  // ======================
-
-  if (command === 'verhermano') {
-
-    if (!ownersJid.includes(sender))
-      return m.reply('❌ Solo el dueño.')
-
-    const target = getTarget()
-    if (!target) return m.reply('Menciona a alguien.')
-
-    const user = getUser(target)
-
-    if (!user.hermano)
-      return m.reply('😹 No tiene hermano.')
-
-    return conn.reply(m.chat,
-`🧬 Hermandad
-
-${tag(target)} 🤝 ${tag(user.hermano)}
-
-💪 Nivel: ${user.nivel}
-🏅 ${rango(user.nivel)}`,
-m,{mentions:[target,user.hermano]})
-  }
-
-  // ======================
-  // 🏆 TOP HERMANOS (OWNER)
+  // 🏆 TOP HERMANOS
   // ======================
 
   if (command === 'tophermanos') {
@@ -304,17 +278,30 @@ m,{mentions:[target,user.hermano]})
       return m.reply('❌ Solo el dueño.')
 
     const ranking = Object.entries(db)
-      .filter(([id,u]) => u.hermano)
+      .filter(([id,u]) => u.hermano && id < u.hermano)
       .sort((a,b)=>b[1].nivel - a[1].nivel)
       .slice(0,5)
 
     let txt = '🏆 *TOP HERMANOS*\n\n'
+    let mentions = []
 
     ranking.forEach(([id,u],i)=>{
-      txt += `${i+1}. ${tag(id)} 💪 ${u.nivel}\n`
+
+      txt += `🥇 *${i+1}° Lugar*
+${tag(id)} 🧬 ${tag(u.hermano)}
+💪 Nivel: ${u.nivel}
+🏅 ${rango(u.nivel)}
+
+`
+
+      mentions.push(id, u.hermano)
+
     })
 
-    return conn.reply(m.chat, txt, m)
+    if (!mentions.length)
+      txt += '😹 No hay hermanos aún.'
+
+    return conn.reply(m.chat, txt.trim(), m, { mentions })
   }
 
   // ======================
