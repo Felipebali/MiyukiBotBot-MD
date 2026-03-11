@@ -61,6 +61,9 @@ let handler = async (m, { conn }) => {
 ┃ 💋 *.besar* – Besar a tu pareja
 ┃ 🤗 *.abrazar* – Abrazar a tu pareja
 ┃ 💖 *.amor* – Aumentar amor
+┃ 🌹 *.flores* – Regalar flores
+┃ 🎁 *.regalo* – Dar un regalo
+┃ 🍷 *.cita* – Tener una cita romántica
 ┗━━━━━━━━━━━━━━━━━━━━━┛
 
 ┏━━━ 📚 *TIPOS DE MENÚ* ━━━┓
