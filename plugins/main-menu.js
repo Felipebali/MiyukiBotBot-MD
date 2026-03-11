@@ -43,6 +43,8 @@ let handler = async (m, { conn }) => {
 ┃ 💔 *.romperhermandad* – Romper hermandad
 ┃ 🫂 *.abrazohermano* – Abrazar a tu hermano
 ┃ 🛡️ *.proteger* – Proteger a tu hermano
+┃ 🤜 *.chocarhermano* – Chocar puños
+┃ 🏋️ *.entrenarhermano* – Entrenar juntos
 ┃ 📊 *.relacionhermano* – Ver estado de hermandad
 ┗━━━━━━━━━━━━━━━━━━━━━┛
 
