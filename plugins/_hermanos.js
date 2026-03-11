@@ -1,4 +1,4 @@
-// 🔹 handler hermanos completo — FELI 2026
+// 🔹 handler hermanos completo — FELI 2026 PRO
 import fs from 'fs'
 import path from 'path'
 
@@ -11,7 +11,6 @@ if (!fs.existsSync(file)) fs.writeFileSync(file, JSON.stringify({}, null, 2))
 const loadDB = () => JSON.parse(fs.readFileSync(file))
 const saveDB = (data) => fs.writeFileSync(file, JSON.stringify(data, null, 2))
 
-// 🧠 Sistema universal de owners
 function getOwnersJid() {
   return (global.owner || [])
     .map(v => {
@@ -36,7 +35,9 @@ let handler = async (m, { conn, command }) => {
         propuesta: null,
         propuestaFecha: null,
         hermandadFecha: null,
-        nivel: 0
+        nivel: 0,
+        interacciones: 0,
+        cooldown: 0
       }
     }
     return db[id]
@@ -50,11 +51,6 @@ let handler = async (m, { conn, command }) => {
 
   const tag = (id) => '@' + id.split('@')[0]
 
-  const tiempo = (ms) => {
-    const dias = Math.floor(ms / 86400000)
-    return `${dias} días`
-  }
-
   const fechaBonita = (ms) => {
     if (!ms) return 'Desconocida'
     const d = new Date(ms)
@@ -65,10 +61,27 @@ let handler = async (m, { conn, command }) => {
     })
   }
 
+  const rango = (nivel) => {
+    if (nivel >= 200) return '🔥 Hermanos Legendarios'
+    if (nivel >= 120) return '💪 Hermanos Fuertes'
+    if (nivel >= 60) return '🤝 Hermanos Reales'
+    if (nivel >= 30) return '🙂 Hermanos Cercanos'
+    return '👶 Hermanos Nuevos'
+  }
+
+  const checkCooldown = (user) => {
+    if (Date.now() - user.cooldown < 60000)
+      return true
+    user.cooldown = Date.now()
+    return false
+  }
+
   // ======================
   // 🤝 PROPUESTA HERMANO
   // ======================
+
   if (command === 'hermano') {
+
     const target = getTarget()
     if (!target) return m.reply('🤝 Menciona o responde al mensaje.')
     if (target === sender) return m.reply('😹 No puedes ser tu propio hermano.')
@@ -78,6 +91,7 @@ let handler = async (m, { conn, command }) => {
 
     if (user.hermano)
       return m.reply(`😎 Ya tienes hermano: ${tag(user.hermano)}`)
+
     if (tu.hermano)
       return m.reply(`😅 ${tag(target)} ya tiene hermano.`)
 
@@ -87,59 +101,73 @@ let handler = async (m, { conn, command }) => {
     saveDB(db)
 
     return conn.reply(m.chat,
-      `🤝 *Propuesta de Hermandad*\n\n${tag(sender)} quiere ser hermano de ${tag(target)} 🧬\n\nResponde:\n👉 *.aceptarhermano*\n👉 *.rechazarhermano*`,
-      m, { mentions: [sender, target] })
+`🤝 *Propuesta de Hermandad*
+
+${tag(sender)} quiere ser hermano de ${tag(target)} 🧬
+
+Responde:
+👉 *.aceptarhermano*
+👉 *.rechazarhermano*`,
+m,{mentions:[sender,target]})
   }
 
   // ======================
   // ✅ ACEPTAR
   // ======================
+
   if (command === 'aceptarhermano') {
+
     const user = getUser(sender)
     if (!user.propuesta) return m.reply('💭 No tienes propuestas.')
 
     const proposer = user.propuesta
     const proposerUser = getUser(proposer)
 
-    if (user.propuestaFecha && ahora - user.propuestaFecha > 86400000) {
-      user.propuesta = null
-      saveDB(db)
-      return m.reply('⏳ La propuesta expiró.')
-    }
-
     user.hermano = proposer
     proposerUser.hermano = sender
+
     user.hermandadFecha = ahora
     proposerUser.hermandadFecha = ahora
+
     user.propuesta = null
 
     saveDB(db)
 
     return conn.reply(m.chat,
-      `🧬 *¡Hermandad confirmada!*\n\n${tag(sender)} 🤝 ${tag(proposer)}\n📅 Desde: ${fechaBonita(ahora)}\nAhora son hermanos oficiales 💪`,
-      m, { mentions: [sender, proposer] })
+`🧬 *¡Hermandad confirmada!*
+
+${tag(sender)} 🤝 ${tag(proposer)}
+
+📅 Desde: ${fechaBonita(ahora)}
+💪 Ahora son hermanos oficiales`,
+m,{mentions:[sender,proposer]})
   }
 
   // ======================
   // ❌ RECHAZAR
   // ======================
+
   if (command === 'rechazarhermano') {
+
     const user = getUser(sender)
     if (!user.propuesta) return m.reply('💭 No tienes propuestas.')
 
     const proposer = user.propuesta
+
     user.propuesta = null
     saveDB(db)
 
     return conn.reply(m.chat,
-      `😅 ${tag(sender)} rechazó la hermandad con ${tag(proposer)}`,
-      m, { mentions: [sender, proposer] })
+`😅 ${tag(sender)} rechazó la hermandad con ${tag(proposer)}`,
+m,{mentions:[sender,proposer]})
   }
 
   // ======================
-  // 💔 ROMPER HERMANDAD
+  // 💔 ROMPER
   // ======================
+
   if (command === 'romperhermandad') {
+
     const user = getUser(sender)
     if (!user.hermano) return m.reply('😹 No tienes hermano.')
 
@@ -147,121 +175,226 @@ let handler = async (m, { conn, command }) => {
     const bro = getUser(broId)
 
     user.hermano = null
-    user.hermandadFecha = null
-    user.nivel = 0
-
     bro.hermano = null
+
+    user.hermandadFecha = null
     bro.hermandadFecha = null
+
+    user.nivel = 0
     bro.nivel = 0
 
     saveDB(db)
 
     return conn.reply(m.chat,
-      `💔 ${tag(sender)} rompió la hermandad con ${tag(broId)}`,
-      m, { mentions: [sender, broId] })
+`💔 ${tag(sender)} rompió la hermandad con ${tag(broId)}`,
+m,{mentions:[sender,broId]})
   }
 
   // ======================
   // 🤜 INTERACCIONES
   // ======================
-  if (['abrazohermano','proteger','relacionhermano'].includes(command)) {
+
+  if ([
+    'abrazohermano',
+    'proteger',
+    'chocarhermano',
+    'entrenarhermano',
+    'relacionhermano'
+  ].includes(command)) {
 
     const user = getUser(sender)
     if (!user.hermano) return m.reply('😹 No tienes hermano.')
 
     const bro = getUser(user.hermano)
 
-    switch(command) {
+    if (command !== 'relacionhermano') {
+      if (checkCooldown(user))
+        return m.reply('⏳ Espera 1 minuto para otra interacción.')
+    }
+
+    switch(command){
 
       case 'abrazohermano':
-        user.nivel += 5
-        bro.nivel = user.nivel
-        saveDB(db)
-        return conn.reply(m.chat,
-          `🫂 ${tag(sender)} abrazó a ${tag(user.hermano)}\n💪 Nivel: ${user.nivel}`,
-          m, { mentions: [sender, user.hermano] })
+
+      user.nivel += 5
+      user.interacciones++
+
+      break
 
       case 'proteger':
-        user.nivel += 10
-        bro.nivel = user.nivel
-        saveDB(db)
-        return conn.reply(m.chat,
-          `🛡️ ${tag(sender)} protegió a ${tag(user.hermano)} 🔥\n💪 Nivel: ${user.nivel}`,
-          m, { mentions: [sender, user.hermano] })
+
+      user.nivel += 10
+      user.interacciones++
+
+      break
+
+      case 'chocarhermano':
+
+      user.nivel += 7
+      user.interacciones++
+
+      break
+
+      case 'entrenarhermano':
+
+      user.nivel += 15
+      user.interacciones++
+
+      break
 
       case 'relacionhermano':
-        const dias = user.hermandadFecha
-          ? Math.floor((Date.now() - user.hermandadFecha) / 86400000)
-          : 0
 
-        return conn.reply(m.chat,
-          `🧬 *Hermandad*
+      const dias = user.hermandadFecha
+      ? Math.floor((Date.now() - user.hermandadFecha) / 86400000)
+      : 0
+
+      return conn.reply(m.chat,
+`🧬 *Hermandad*
+
 ${tag(sender)} 🤝 ${tag(user.hermano)}
+
 🕒 Tiempo: ${dias} días
 📅 Desde: ${fechaBonita(user.hermandadFecha)}
-💪 Nivel: ${user.nivel}`,
-          m, { mentions: [sender, user.hermano] })
+
+💪 Nivel: ${user.nivel}
+🏅 Rango: ${rango(user.nivel)}
+🎮 Interacciones: ${user.interacciones}`,
+m,{mentions:[sender,user.hermano]})
     }
+
+    bro.nivel = user.nivel
+    bro.interacciones = user.interacciones
+
+    saveDB(db)
+
+    return conn.reply(m.chat,
+`🤜 ${tag(sender)} interactuó con ${tag(user.hermano)}
+
+💪 Nivel: ${user.nivel}
+🏅 ${rango(user.nivel)}`,
+m,{mentions:[sender,user.hermano]})
   }
 
   // ======================
-  // 📜 LISTA HERMANOS (owner)
+  // 👀 VER HERMANO
   // ======================
+
+  if (command === 'verhermano') {
+
+    const target = getTarget()
+    if (!target) return m.reply('Menciona a alguien.')
+
+    const user = getUser(target)
+
+    if (!user.hermano)
+      return m.reply('😹 No tiene hermano.')
+
+    return conn.reply(m.chat,
+`🧬 Hermandad
+
+${tag(target)} 🤝 ${tag(user.hermano)}
+
+💪 Nivel: ${user.nivel}
+🏅 ${rango(user.nivel)}`,
+m,{mentions:[target,user.hermano]})
+  }
+
+  // ======================
+  // 🏆 TOP HERMANOS
+  // ======================
+
+  if (command === 'tophermanos') {
+
+    const ranking = Object.entries(db)
+      .filter(([id,u]) => u.hermano)
+      .sort((a,b)=>b[1].nivel - a[1].nivel)
+      .slice(0,5)
+
+    let txt = '🏆 *TOP HERMANOS*\n\n'
+
+    ranking.forEach(([id,u],i)=>{
+      txt += `${i+1}. ${tag(id)} 💪 ${u.nivel}\n`
+    })
+
+    return conn.reply(m.chat, txt, m)
+  }
+
+  // ======================
+  // 📜 LISTA HERMANOS
+  // ======================
+
   if (command === 'listahermanos') {
-    if (!ownersJid.includes(sender)) return m.reply('❌ Solo el dueño.')
+
+    if (!ownersJid.includes(sender))
+      return m.reply('❌ Solo el dueño.')
 
     let texto = '🧬 *Hermanos activos*\n\n'
     let mentions = []
 
     for (let id in db) {
+
       const user = db[id]
 
       if (user.hermano && id < user.hermano) {
 
-        const dias = user.hermandadFecha
-          ? Math.floor((Date.now() - user.hermandadFecha) / 86400000)
-          : 0
-
         texto += `🤝 ${tag(id)} 🧬 ${tag(user.hermano)}
-🕒 Tiempo: ${dias} días
-📅 Desde: ${fechaBonita(user.hermandadFecha)}
 💪 Nivel: ${user.nivel}
 
 `
-        mentions.push(id, user.hermano)
+
+        mentions.push(id,user.hermano)
       }
     }
 
-    if (!mentions.length) texto += '😹 No hay hermanos activos.'
+    if (!mentions.length)
+      texto += '😹 No hay hermanos activos.'
 
     return conn.reply(m.chat, texto.trim(), m, { mentions })
   }
 
   // ======================
-  // 🧹 CLEAR BRO (owner)
+  // 🧹 CLEAR
   // ======================
+
   if (command === 'clearbro') {
-    if (!ownersJid.includes(sender)) return m.reply('❌ Solo el dueño.')
+
+    if (!ownersJid.includes(sender))
+      return m.reply('❌ Solo el dueño.')
 
     for (let id in db) {
+
       db[id] = {
         hermano: null,
         propuesta: null,
         propuestaFecha: null,
         hermandadFecha: null,
-        nivel: 0
+        nivel: 0,
+        interacciones: 0,
+        cooldown: 0
       }
+
     }
 
     saveDB(db)
+
     return m.reply('🧹 Todas las hermandades fueron eliminadas.')
   }
 }
 
 handler.command = [
-  'hermano','aceptarhermano','rechazarhermano','romperhermandad',
-  'abrazohermano','proteger','relacionhermano',
-  'listahermanos','clearbro'
+  'hermano',
+  'aceptarhermano',
+  'rechazarhermano',
+  'romperhermandad',
+  'abrazohermano',
+  'proteger',
+  'chocarhermano',
+  'entrenarhermano',
+  'relacionhermano',
+  'verhermano',
+  'tophermanos',
+  'listahermanos',
+  'clearbro'
 ]
 
 export default handler
