@@ -113,6 +113,36 @@ m,{mentions:[sender,target]})
   }
 
   // ======================
+  // 👀 VER HERMANO
+  // ======================
+
+  if (command === 'verhermano') {
+
+    const target = getTarget() || sender
+    const user = getUser(target)
+
+    if (!user.hermano)
+      return m.reply('😹 Ese usuario no tiene hermano.')
+
+    const dias = user.hermandadFecha
+      ? Math.floor((Date.now() - user.hermandadFecha) / 86400000)
+      : 0
+
+    return conn.reply(m.chat,
+`🧬 *Hermandad*
+
+${tag(target)} 🤝 ${tag(user.hermano)}
+
+🕒 Tiempo: ${dias} días
+📅 Desde: ${fechaBonita(user.hermandadFecha)}
+
+💪 Nivel: ${user.nivel}
+🏅 Rango: ${rango(user.nivel)}
+🎮 Interacciones: ${user.interacciones}`,
+m,{mentions:[target,user.hermano]})
+  }
+
+  // ======================
   // ✅ ACEPTAR
   // ======================
 
