@@ -22,7 +22,8 @@ if (user.pareja && id < user.pareja) {
 let parejaData = db[user.pareja]
 if (!parejaData) continue
 
-let amorTotal = (user.amor || 0) + (parejaData.amor || 0)
+// ❤️ NO sumar, usar solo uno
+let amorTotal = user.amor || 0
 
 parejas.push({
 u1: id,
@@ -46,7 +47,7 @@ let u1 = '@'+p.u1.split('@')[0]
 let u2 = '@'+p.u2.split('@')[0]
 
 texto += `💞 *${i+1}.* ${u1} ❤️ ${u2}\n`
-texto += `❤️ Amor total: ${p.amor}\n\n`
+texto += `❤️ Amor: ${p.amor}\n\n`
 
 })
 
