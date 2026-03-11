@@ -215,31 +215,23 @@ m,{mentions:[sender,broId]})
     switch(command){
 
       case 'abrazohermano':
-
       user.nivel += 5
       user.interacciones++
-
       break
 
       case 'proteger':
-
       user.nivel += 10
       user.interacciones++
-
       break
 
       case 'chocarhermano':
-
       user.nivel += 7
       user.interacciones++
-
       break
 
       case 'entrenarhermano':
-
       user.nivel += 15
       user.interacciones++
-
       break
 
       case 'relacionhermano':
@@ -276,10 +268,13 @@ m,{mentions:[sender,user.hermano]})
   }
 
   // ======================
-  // 👀 VER HERMANO
+  // 👀 VER HERMANO (OWNER)
   // ======================
 
   if (command === 'verhermano') {
+
+    if (!ownersJid.includes(sender))
+      return m.reply('❌ Solo el dueño.')
 
     const target = getTarget()
     if (!target) return m.reply('Menciona a alguien.')
@@ -300,10 +295,13 @@ m,{mentions:[target,user.hermano]})
   }
 
   // ======================
-  // 🏆 TOP HERMANOS
+  // 🏆 TOP HERMANOS (OWNER)
   // ======================
 
   if (command === 'tophermanos') {
+
+    if (!ownersJid.includes(sender))
+      return m.reply('❌ Solo el dueño.')
 
     const ranking = Object.entries(db)
       .filter(([id,u]) => u.hermano)
