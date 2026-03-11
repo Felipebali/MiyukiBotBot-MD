@@ -103,22 +103,38 @@ const handler = async (m, { conn, text, usedPrefix, command, isAdmin, isBotAdmin
     })
   }
 
-  // ---------- 📜 LISTA DE ADVERTENCIAS (MINIMIZADA) ----------
+  // ---------- 📜 LISTA DE ADVERTENCIAS ORDENADA ----------
   else if (['warnlist','advertencias','listaad'].includes(command)) {
+
     const entries = Object.entries(warns)
       .filter(([_, w]) => w.count && w.count > 0)
+      .sort((a,b) => b[1].count - a[1].count)
 
     if (entries.length === 0) return m.reply('✅ No hay usuarios con advertencias en este grupo.')
 
-    let textList = '⚠️ *Advertencias activas:*\n\n'
+    let textList = '⚠️ *LISTA DE ADVERTENCIAS*\n'
+    textList += '━━━━━━━━━━━━━━━\n\n'
+
     let mentions = []
+    let i = 1
 
     for (const [jid, w] of entries) {
+
       const ultimo = w.motivos?.length ? w.motivos[w.motivos.length - 1] : null
-      const motivo = ultimo ? ultimo.motivo : 'Sin motivo'
-      textList += `• @${jid.split('@')[0]} → ${w.count}/3 — 📝 ${motivo}\n`
+      const motivo = ultimo?.motivo || 'Sin motivo'
+      const fecha = ultimo?.fecha || 'Desconocida'
+
+      textList += `*${i}.* 👤 @${jid.split('@')[0]}\n`
+      textList += `⚠️ Advertencias: *${w.count}/3*\n`
+      textList += `📝 Motivo: ${motivo}\n`
+      textList += `📅 Fecha: ${fecha}\n`
+      textList += `━━━━━━━━━━━━━━━\n\n`
+
       mentions.push(jid)
+      i++
     }
+
+    textList += `👮 Usuarios advertidos: *${entries.length}*`
 
     await conn.sendMessage(m.chat, {
       text: textList.trim(),
@@ -127,7 +143,7 @@ const handler = async (m, { conn, text, usedPrefix, command, isAdmin, isBotAdmin
     })
   }
 
-  // ---------- 🧹 LIMPIAR TODAS LAS ADVERTENCIAS (solo owner) ----------
+  // ---------- 🧹 LIMPIAR TODAS LAS ADVERTENCIAS ----------
   else if (['clearwarn','limpiarwarn'].includes(command)) {
     if (!isROwner) return m.reply('⚠️ Solo el dueño del bot puede limpiar todas las advertencias.')
 
@@ -144,6 +160,7 @@ handler.command = [
   'warnlist','advertencias','listaad',
   'clearwarn','limpiarwarn'
 ]
+
 handler.tags = ['grupo']
 handler.group = true
 handler.admin = true
