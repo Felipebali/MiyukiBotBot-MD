@@ -30,28 +30,32 @@ let handler = async (m, { conn, text }) => {
   if (!ownersJid.includes(sender))
     return m.reply('❌ Solo el dueño puede usar este comando.')
 
-  // =====================
-  // OBTENER MENCIONES
-  // =====================
+  // ======================
+  // OBTENER USUARIOS
+  // ======================
 
   let users = []
 
-  if (m.mentionedJid) {
+  // menciones
+  if (m.mentionedJid && m.mentionedJid.length) {
     users.push(...m.mentionedJid)
   }
 
-  // =====================
-  // OBTENER NUMEROS
-  // =====================
-
+  // numeros escritos
   if (text) {
-    const nums = text.match(/\+?\d{7,15}/g)
+    const nums = text.match(/\d{7,15}/g)
 
     if (nums) {
-      nums.forEach(n => {
-        const jid = n.replace(/[^0-9]/g, '') + '@s.whatsapp.net'
-        users.push(jid)
-      })
+      for (let num of nums) {
+        const jid = num + '@s.whatsapp.net'
+
+        // verificar si existe en WhatsApp
+        const exists = await conn.onWhatsApp(num)
+
+        if (exists && exists[0]?.jid) {
+          users.push(exists[0].jid)
+        }
+      }
     }
   }
 
@@ -60,12 +64,12 @@ let handler = async (m, { conn, text }) => {
 
   if (users.length < 2)
     return m.reply(
-`💡 Debes poner dos usuarios
+`💡 Usa dos usuarios
 
 Ejemplos:
 .setpareja @user1 @user2
-.setpareja +59891234567 +59898765432
-.setpareja @user1 +59898765432`
+.setpareja 59891234567 59898765432
+.setpareja @user1 59898765432`
 )
 
   const user1 = users[0]
@@ -87,7 +91,7 @@ Ejemplos:
     return db[id]
   }
 
-  const tag = (id) => '@' + id.split('@')[0]
+  const tag = id => '@' + id.split('@')[0]
 
   const box = (title, text) => `╭━━━〔 ${title} 〕━━━⬣
 ${text}
