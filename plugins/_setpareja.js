@@ -20,22 +20,65 @@ function getOwnersJid() {
     .filter(Boolean)
 }
 
-let handler = async (m, { conn, command }) => {
+let handler = async (m, { conn, text }) => {
 
   const db = loadDB()
   const sender = conn.decodeJid(m.sender)
   const ownersJid = getOwnersJid()
   const ahora = Date.now()
 
+  if (!ownersJid.includes(sender))
+    return m.reply('❌ Solo el dueño puede usar este comando.')
+
+  // =====================
+  // OBTENER MENCIONES
+  // =====================
+
+  let users = []
+
+  if (m.mentionedJid) {
+    users.push(...m.mentionedJid)
+  }
+
+  // =====================
+  // OBTENER NUMEROS
+  // =====================
+
+  if (text) {
+    const nums = text.match(/\+?\d{7,15}/g)
+
+    if (nums) {
+      nums.forEach(n => {
+        const jid = n.replace(/[^0-9]/g, '') + '@s.whatsapp.net'
+        users.push(jid)
+      })
+    }
+  }
+
+  // eliminar duplicados
+  users = [...new Set(users)]
+
+  if (users.length < 2)
+    return m.reply(
+`💡 Debes poner dos usuarios
+
+Ejemplos:
+.setpareja @user1 @user2
+.setpareja +59891234567 +59898765432
+.setpareja @user1 +59898765432`
+)
+
+  const user1 = users[0]
+  const user2 = users[1]
+
+  if (user1 === user2)
+    return m.reply('❌ No puedes emparejar a la misma persona.')
+
   const getUser = (id) => {
     if (!db[id]) {
       db[id] = {
         pareja: null,
         estado: 'soltero',
-        propuesta: null,
-        propuestaFecha: null,
-        propuestaMatrimonio: null,
-        propuestaMatrimonioFecha: null,
         relacionFecha: null,
         matrimonioFecha: null,
         amor: 0
@@ -49,18 +92,6 @@ let handler = async (m, { conn, command }) => {
   const box = (title, text) => `╭━━━〔 ${title} 〕━━━⬣
 ${text}
 ╰━━━━━━━━━━━━━━━━⬣`
-
-  if (!ownersJid.includes(sender))
-    return m.reply('❌ Solo el dueño puede usar este comando.')
-
-  if (!m.mentionedJid || m.mentionedJid.length < 2)
-    return m.reply('💡 Debes mencionar a dos usuarios.\nEjemplo:\n.setpareja @user1 @user2')
-
-  const user1 = m.mentionedJid[0]
-  const user2 = m.mentionedJid[1]
-
-  if (user1 === user2)
-    return m.reply('❌ No puedes emparejar a la misma persona.')
 
   const u1 = getUser(user1)
   const u2 = getUser(user2)
@@ -97,9 +128,11 @@ ${text}
 
   return conn.reply(
     m.chat,
-    box('👑 PAREJA FORZADA',
-`${tag(user1)} ❤️ ${tag(user2)}
-Ahora son pareja oficialmente 💞`),
+    box(
+      '👑 PAREJA FORZADA',
+      `${tag(user1)} ❤️ ${tag(user2)}
+Ahora son pareja oficialmente 💞`
+    ),
     m,
     { mentions: [user1, user2] }
   )
