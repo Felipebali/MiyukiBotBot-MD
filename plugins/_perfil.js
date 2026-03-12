@@ -212,12 +212,13 @@ tiempoTexto = data.relacionFecha
 
 let hermanoTexto = ''
 let tiempoHermano = ''
+let hermanoJid = null
 
 const dataHermano = hermanos[jid]
 
 if (dataHermano?.hermano) {
 
-const hermanoJid = dataHermano.hermano
+hermanoJid = dataHermano.hermano
 
 hermanoTexto = `🧬 Hermano: @${hermanoJid.split('@')[0]}`
 
@@ -273,7 +274,9 @@ ${diasCumple ? `⏳ Faltan ${diasCumple} día(s) para tu cumpleaños` : ''}
 savePerfiles(perfiles)
 
 const mentions = [jid]
+
 if (parejaJid) mentions.push(parejaJid)
+if (hermanoJid) mentions.push(hermanoJid)
 
 let pp = null
 
