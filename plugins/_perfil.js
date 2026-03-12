@@ -207,7 +207,7 @@ tiempoTexto = data.relacionFecha
 }
 
 // =====================
-// HERMANOS
+// HERMANOS (MISMA LÓGICA QUE PAREJAS)
 // =====================
 
 let hermanoTexto = ''
@@ -222,10 +222,9 @@ hermanoJid = dataHermano.hermano
 
 hermanoTexto = `🧬 Hermano: @${hermanoJid.split('@')[0]}`
 
-if (dataHermano.fecha) {
-tiempoHermano =
-`⏳ Hermandad: ${tiempoRelacion(dataHermano.fecha)}`
-}
+tiempoHermano = dataHermano.fecha
+? `⏳ Tiempo de hermandad: ${tiempoRelacion(dataHermano.fecha)}`
+: ''
 
 }
 
@@ -289,8 +288,6 @@ pp = url
 pp = null
 }
 
-// FOTO PERFIL
-
 if (pp) {
 
 return await conn.sendMessage(
@@ -304,8 +301,6 @@ mentions
 )
 
 }
-
-// SOLO TEXTO
 
 return await m.reply(textoPerfil, null, { mentions })
 
