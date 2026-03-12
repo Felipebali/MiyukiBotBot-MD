@@ -15,9 +15,11 @@ global.owner = [
 ['59898719147', 'Feli', true], // tu número como dueño
   ['59896320503', 'Diame', true], 
   ['59898652759', 'Max', true],
+  ['59892975182', 'Meli'],
   ['119069730668723', 'FeliLID', true], // tu LID
   ['27479704076469', 'DiamLID', true],
-  ['250117605036271', 'MaxLID', true]
+  ['250117605036271', 'MaxLID', true],
+  ['275483598016526', 'MeliLID']
 ];
 
 global.mods = []
