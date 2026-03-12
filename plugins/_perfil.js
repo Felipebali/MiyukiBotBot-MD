@@ -31,7 +31,7 @@ const loadParejas = () => JSON.parse(fs.readFileSync(parejasFile))
 const loadHermanos = () => JSON.parse(fs.readFileSync(hermanosFile))
 
 // =====================
-// FUNCIONES EXTRA
+// FUNCIONES
 // =====================
 
 const calcularEdad = (fecha) => {
@@ -96,9 +96,7 @@ const diasParaCumple = (fecha) => {
   }
 
   const diff = cumple - hoy
-  const dias = Math.ceil(diff / 86400000)
-
-  return dias
+  return Math.ceil(diff / 86400000)
 }
 
 // =====================
@@ -106,49 +104,60 @@ const diasParaCumple = (fecha) => {
 // =====================
 
 let handler = async (m, { conn, text, command }) => {
-  try {
 
-    const perfiles = loadPerfiles()
-    const parejas = loadParejas()
-    const hermanos = loadHermanos()
+try {
 
-    const jid = conn.decodeJid ? conn.decodeJid(m.sender) : m.sender
-    const username = jid.split('@')[0]
+const perfiles = loadPerfiles()
+const parejas = loadParejas()
+const hermanos = loadHermanos()
 
-    if (!perfiles[jid]) {
-      perfiles[jid] = {
-        registered: Date.now(),
-        joinGroup: null,
-        insignias: [],
-        genero: null,
-        birth: null,
-        bio: null
-      }
-    }
+const jid = conn.decodeJid ? conn.decodeJid(m.sender) : m.sender
+const username = jid.split('@')[0]
 
-    const user = perfiles[jid]
+// =====================
+// CREAR PERFIL
+// =====================
 
-    if (m.isGroup && !user.joinGroup)
-      user.joinGroup = Date.now()
+if (!perfiles[jid]) {
+perfiles[jid] = {
+registered: Date.now(),
+joinGroup: null,
+insignias: [],
+genero: null,
+birth: null,
+bio: null
+}
+}
 
-    const senderNumber = jid.replace(/[^0-9]/g, '')
-    const ownerNumbers = (global.owner || []).map(v => {
-      if (Array.isArray(v)) v = v[0]
-      return String(v).replace(/[^0-9]/g, '')
-    })
+const user = perfiles[jid]
 
-    const isRealOwner = ownerNumbers.includes(senderNumber)
-    const isAdmin = m.isAdmin || false
+if (m.isGroup && !user.joinGroup)
+user.joinGroup = Date.now()
+
+const senderNumber = jid.replace(/[^0-9]/g, '')
+
+const ownerNumbers = (global.owner || []).map(v => {
+if (Array.isArray(v)) v = v[0]
+return String(v).replace(/[^0-9]/g, '')
+})
+
+const isRealOwner = ownerNumbers.includes(senderNumber)
+const isAdmin = m.isAdmin || false
 
 // =====================
 // BIO
 // =====================
 
 if (command === 'bio') {
-  if (!text) return m.reply('✍️ Escribe tu nueva bio.')
-  user.bio = text.trim()
-  savePerfiles(perfiles)
-  return m.reply('✅ Bio actualizada.')
+
+if (!text) return m.reply('✍️ Escribe tu nueva bio.')
+
+user.bio = text.trim()
+
+savePerfiles(perfiles)
+
+return m.reply('✅ Bio actualizada.')
+
 }
 
 // =====================
@@ -156,21 +165,108 @@ if (command === 'bio') {
 // =====================
 
 if (command === 'genero') {
-  if (!text) return m.reply('⚧️ Escribe tu género.')
-  user.genero = text.trim()
-  savePerfiles(perfiles)
-  return m.reply('✅ Género actualizado.')
+
+if (!text) return m.reply('⚧️ Escribe tu género.')
+
+user.genero = text.trim()
+
+savePerfiles(perfiles)
+
+return m.reply('✅ Género actualizado.')
+
 }
 
 // =====================
-// FECHA NACIMIENTO
+// NACIMIENTO
 // =====================
 
 if (command === 'setbr') {
-  if (!text) return m.reply('🎂 Usa formato: .setbr 31/12/1998')
-  user.birth = text.trim()
-  savePerfiles(perfiles)
-  return m.reply('✅ Fecha de nacimiento guardada.')
+
+if (!text) return m.reply('🎂 Usa formato: .setbr 31/12/1998')
+
+user.birth = text.trim()
+
+savePerfiles(perfiles)
+
+return m.reply('✅ Fecha de nacimiento guardada.')
+
+}
+
+// =====================
+// OTORGAR INSIGNIA
+// =====================
+
+if (command === 'otorgar') {
+
+if (!m.mentionedJid[0])
+return m.reply('⚠️ Menciona a un usuario.')
+
+const target = m.mentionedJid[0]
+
+const insignia = text.replace(/@\d+/g,'').trim()
+
+if (!insignia)
+return m.reply('⚠️ Escribe la insignia.')
+
+if (!perfiles[target]) {
+perfiles[target] = { insignias: [] }
+}
+
+if (!perfiles[target].insignias)
+perfiles[target].insignias = []
+
+perfiles[target].insignias.push(insignia)
+
+savePerfiles(perfiles)
+
+return m.reply(`🏅 Insignia otorgada a @${target.split('@')[0]}\n${insignia}`, null, {mentions:[target]})
+
+}
+
+// =====================
+// QUITAR INSIGNIA
+// =====================
+
+if (command === 'quitar') {
+
+if (!m.mentionedJid[0])
+return m.reply('⚠️ Menciona a un usuario.')
+
+const target = m.mentionedJid[0]
+
+const insignia = text.replace(/@\d+/g,'').trim()
+
+if (!perfiles[target]?.insignias?.length)
+return m.reply('❌ Ese usuario no tiene insignias.')
+
+perfiles[target].insignias =
+perfiles[target].insignias.filter(i => i !== insignia)
+
+savePerfiles(perfiles)
+
+return m.reply(`❌ Insignia quitada a @${target.split('@')[0]}`, null, {mentions:[target]})
+
+}
+
+// =====================
+// VER INSIGNIAS
+// =====================
+
+if (command === 'insignias') {
+
+const target = m.mentionedJid[0] || jid
+
+const data = perfiles[target]
+
+if (!data?.insignias?.length)
+return m.reply('🏅 Este usuario no tiene insignias.')
+
+const lista = data.insignias
+.map(i => `• ${i}`)
+.join('\n')
+
+return m.reply(`🏅 INSIGNIAS DE @${target.split('@')[0]}\n\n${lista}`, null, {mentions:[target]})
+
 }
 
 // =====================
@@ -190,14 +286,14 @@ const data = parejas[jid]
 if (data?.pareja) {
 
 parejaJid = data.pareja
-const estado = data.estado || 'novios'
 
 estadoTexto =
-estado === 'casados'
+data.estado === 'casados'
 ? '💍 Estado: Casado/a'
 : '💑 Estado: De novio/a'
 
 parejaTexto = `❤️ Pareja: @${parejaJid.split('@')[0]}`
+
 amorTexto = `💖 Amor: ${data.amor || 0}`
 
 tiempoTexto = data.relacionFecha
@@ -207,7 +303,7 @@ tiempoTexto = data.relacionFecha
 }
 
 // =====================
-// HERMANOS (MISMA LÓGICA QUE PAREJAS)
+// HERMANOS
 // =====================
 
 let hermanoTexto = ''
@@ -229,7 +325,7 @@ tiempoHermano = dataHermano.fecha
 }
 
 // =====================
-// EDAD Y ZODIACO
+// EDAD
 // =====================
 
 const edad = user.birth ? calcularEdad(user.birth) : null
@@ -237,7 +333,7 @@ const signo = user.birth ? signoZodiacal(user.birth) : null
 const diasCumple = user.birth ? diasParaCumple(user.birth) : null
 
 // =====================
-// TEXTO PERFIL
+// PERFIL TEXTO
 // =====================
 
 const textoPerfil = `
@@ -280,38 +376,34 @@ if (hermanoJid) mentions.push(hermanoJid)
 let pp = null
 
 try {
-const url = await conn.profilePictureUrl(jid, 'image')
-if (url && url.startsWith('http')) {
-pp = url
-}
-} catch {
-pp = null
-}
+pp = await conn.profilePictureUrl(jid, 'image')
+} catch {}
 
 if (pp) {
 
-return await conn.sendMessage(
+return conn.sendMessage(
 m.chat,
 {
-image: { url: pp },
-caption: textoPerfil,
+image:{url:pp},
+caption:textoPerfil,
 mentions
 },
-{ quoted: m }
+{quoted:m}
 )
 
 }
 
-return await m.reply(textoPerfil, null, { mentions })
+return m.reply(textoPerfil,null,{mentions})
 
 }
 
-} catch (e) {
+} catch(e){
 
 console.error(e)
 m.reply('❌ Error en perfil.')
 
 }
+
 }
 
 handler.command = [
